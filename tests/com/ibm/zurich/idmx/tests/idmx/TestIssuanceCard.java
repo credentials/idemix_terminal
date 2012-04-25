@@ -25,7 +25,6 @@ import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.issuance.IssuanceSpec;
 import com.ibm.zurich.idmx.issuance.Issuer;
 import com.ibm.zurich.idmx.issuance.Message;
-import com.ibm.zurich.idmx.issuance.Recipient;
 import com.ibm.zurich.idmx.key.IssuerKeyPair;
 import com.ibm.zurich.idmx.utils.Constants;
 import com.ibm.zurich.idmx.utils.XMLSerializer;
