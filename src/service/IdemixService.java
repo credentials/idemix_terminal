@@ -915,25 +915,25 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             }
             
             // send Proof 
-            BigInteger s_e = 
-                (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
-            CommandAPDU proof_s_e = new CommandAPDU(CLA_IDEMIX, 
-                    INS_PROOF_A, 0x00, 0x00, BigIntegerToUnsignedByteArray(s_e));
-            ResponseAPDU response_s_e = transmit(proof_s_e);
-            if (response_s_e.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue proof s_e.", 
-                        response_s_e.getSW());
-            }
-
             BigInteger cPrime = msg.getProof().getChallenge();
             CommandAPDU proof_cPrime = new CommandAPDU(CLA_IDEMIX, 
-                    INS_PROOF_A, 0x01, 0x00, BigIntegerToUnsignedByteArray(cPrime));
+                    INS_PROOF_A, 0x00, 0x00, BigIntegerToUnsignedByteArray(cPrime));
             ResponseAPDU response_cPrime = transmit(proof_cPrime);
             if (response_cPrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof c'.", 
                         response_cPrime.getSW());
             }
         
+            BigInteger s_e = 
+                (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
+            CommandAPDU proof_s_e = new CommandAPDU(CLA_IDEMIX, 
+                    INS_PROOF_A, 0x01, 0x00, BigIntegerToUnsignedByteArray(s_e));
+            ResponseAPDU response_s_e = transmit(proof_s_e);
+            if (response_s_e.getSW() != 0x00009000) {
+                throw new CardServiceException("Could not issue proof s_e.", 
+                        response_s_e.getSW());
+            }
+
             // Do NOT return the generated Idemix credential
             return null;
             
