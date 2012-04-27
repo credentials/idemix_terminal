@@ -153,25 +153,25 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     private static final byte INS_CHALLENGE = 0x21;
 
     /**
+     * INStruction to receive the values A', e^ and v^. 
+     * 
+     * @protocol attribute disclosure / proof generation. 
+     */
+    private static final byte INS_RANDOM_SIGNATURE = 0x22;
+
+    /**
      * INStruction to receive the disclosed attributes (A_i).
      * 
      * @protocol attribute disclosure / proof generation. 
      */
-    private static final byte INS_DISCLOSED_ATTRIBUTES = 0x22;
+    private static final byte INS_DISCLOSED_ATTRIBUTES = 0x23;
 
     /**
      * INStruction to receive the values for the undisclosed attributes (r_i). 
      * 
      * @protocol attribute disclosure / proof generation. 
      */
-    private static final byte INS_UNDISCLOSED_ATTRIBUTES = 0x23;
-
-    /**
-     * INStruction to receive the values . 
-     * 
-     * @protocol attribute disclosure / presentation proof generation. 
-     */
-    private static final byte INS_RANDOM_SIGNATURE = 0x24;
+    private static final byte INS_UNDISCLOSED_ATTRIBUTES = 0x24;
 
     /**
      * Initialisation instructions (getters)
