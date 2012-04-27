@@ -9,14 +9,17 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.TerminalFactory;
+
 import junit.framework.TestCase;
+import net.sourceforge.scuba.smartcards.TerminalCardService;
+import service.IdemixService;
 
 import com.ibm.zurich.credsystem.utils.Locations;
-import com.ibm.zurich.idmx.dm.Credential;
-import com.ibm.zurich.idmx.dm.MasterSecret;
+import com.ibm.zurich.idmx.api.ProverInterface;
 import com.ibm.zurich.idmx.showproof.Proof;
 import com.ibm.zurich.idmx.showproof.ProofSpec;
-import com.ibm.zurich.idmx.showproof.Prover;
 import com.ibm.zurich.idmx.showproof.Verifier;
 import com.ibm.zurich.idmx.utils.Constants;
 import com.ibm.zurich.idmx.utils.Parser;
@@ -32,8 +35,6 @@ import com.ibm.zurich.idmx.utils.XMLSerializer;
  * statement.
  */
 public class TestProofCard extends TestCase {
-
-    private MasterSecret masterSecret = null;
 
     /** Names of the Proof and Nonce objects. */
     private static final String CL_CARD = "clCardValues";
@@ -56,9 +57,6 @@ public class TestProofCard extends TestCase {
 
         // loading credential structures
         preloadCredStructs();
-
-        masterSecret = Locations.loadMasterSecret(TestIssuance.BASE_LOCATION
-                .resolve("../private/ms.xml"));
     }
 
     private static final void loadCredStruct(String credStructName) {
@@ -82,38 +80,6 @@ public class TestProofCard extends TestCase {
      */
     public static final void preloadCredStructs() {
         loadCredStruct(TestIssuanceCard.CRED_STRUCT_CARD);
-        loadCredStruct(TestIssuance.CRED_STRUCT_0);
-        loadCredStruct(TestIssuance.CRED_STRUCT_1A);
-        loadCredStruct(TestIssuance.CRED_STRUCT_1B);
-        loadCredStruct(TestIssuance.CRED_STRUCT_1C);
-        loadCredStruct(TestIssuance.CRED_STRUCT_1D);
-        loadCredStruct(TestIssuance.CRED_STRUCT_2);
-        loadCredStruct(TestIssuance.CRED_STRUCT_3);
-        loadCredStruct(TestIssuance.CRED_STRUCT_4);
-        loadCredStruct(TestIssuance.CRED_STRUCT_5);
-        loadCredStruct(TestIssuance.CRED_STRUCT_6);
-    }
-
-    /**
-     * @param credUri
-     *            File name of the credential.
-     * @param tempCredName
-     *            Temporary name of the credential in the proof specification.
-     * @return Map with credentials that will be needed for the proof.
-     */
-    public final static HashMap<String, Credential> loadCredential(URI credUri,
-            String tempCredName) {
-
-        final Credential c = (Credential) Parser.getInstance().parse(credUri);
-        if (c == null) {
-            fail("getting credential");
-        }
-
-        HashMap<String, Credential> creds = new HashMap<String, Credential>();
-        String credTempName = c.getCredStructId().toString()
-                .concat(Constants.DELIMITER).concat(tempCredName);
-        creds.put(credTempName, c);
-        return creds;
     }
 
     /**
@@ -171,12 +137,16 @@ public class TestProofCard extends TestCase {
         System.out.println("Getting nonce.");
         BigInteger nonce = Verifier.getNonce(sp);
 
-        // load credentials
-        HashMap<String, Credential> creds = loadCredential(
-                TestIssuance.BASE_LOCATION.resolve("../private/"
-                        + TestIssuanceCard.CREDCARD_FN + ".xml"), "someRandomName");
+        ProverInterface prover = null;
+        try {
+            CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
+            prover = new IdemixService(new TerminalCardService(terminal));
+            ((IdemixService) prover).open();
+        } catch (Exception e) {
+            fail(e.getMessage()); 
+            e.printStackTrace();            
+        }
 
-        Prover prover = new Prover(masterSecret, creds);
         // create the proof
         Proof p = prover.buildProof(nonce, spec);
         System.out.println("Proof Created.");

@@ -206,15 +206,6 @@ public class TestIssuanceCard extends TestCase {
             fail("round2");
         }
 
-        Credential cred = recipient.round3(msgToRecipient2);
-
-        if (cred == null) {
-            fail("round3");
-        }
-
-        XMLSerializer.getInstance().serialize(cred,
-                BASE_LOCATION.resolve("../private/" + CREDCARD_FN + ".xml"));
-
-        System.out.println(cred.toStringPretty());
+        recipient.round3(msgToRecipient2);
     }
 }

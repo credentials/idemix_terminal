@@ -934,6 +934,14 @@ public class IdemixService extends CardService implements ProverInterface, Recip
                         response_s_e.getSW());
             }
 
+            CommandAPDU proof_verify = new CommandAPDU(CLA_IDEMIX, 
+                    INS_PROOF_A, 0x02, 0x00);
+            ResponseAPDU response_proof = transmit(proof_verify);
+            if (response_proof.getSW() != 0x00009000) {
+                throw new CardServiceException("Could not verify proof.", 
+                        response_verify.getSW());
+            }
+            
             // Do NOT return the generated Idemix credential
             return null;
             
@@ -980,7 +988,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             Collections.sort(disclosed);
             byte[] D = new byte[disclosed.size()];
             for (int i = 0; i < disclosed.size(); i++) {
-                D[i] = (byte) Integer.parseInt(disclosed.get(i));
+                D[i] = (byte) Integer.parseInt(disclosed.get(i).replaceAll("[^0-9]", ""));
             }
 
             // send the attribute disclosure selection
@@ -994,7 +1002,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             // send and receive the challenge
             CommandAPDU challenge_c = new CommandAPDU(CLA_IDEMIX, 
-                    INS_CHALLENGE, 0x00, 0x00, fixLength(nonce));
+                    INS_CHALLENGE, 0x00, 0x00, BigIntegerToUnsignedByteArray(nonce));
             ResponseAPDU response_c = transmit(challenge_c);
             if (response_c.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not set the challenge " +
