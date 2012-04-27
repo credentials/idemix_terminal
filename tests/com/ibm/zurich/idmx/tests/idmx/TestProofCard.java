@@ -17,7 +17,6 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import service.IdemixService;
 
 import com.ibm.zurich.credsystem.utils.Locations;
-import com.ibm.zurich.idmx.api.ProverInterface;
 import com.ibm.zurich.idmx.showproof.Proof;
 import com.ibm.zurich.idmx.showproof.ProofSpec;
 import com.ibm.zurich.idmx.showproof.Verifier;
@@ -48,12 +47,12 @@ public class TestProofCard extends TestCase {
      * instantiates the master secret.
      */
     protected final void setUp() {
-        Locations.initSystem(TestIssuance.BASE_LOCATION,
-                TestIssuance.BASE_ID.toString());
+        Locations.initSystem(TestIssuanceCard.BASE_LOCATION,
+                TestIssuanceCard.BASE_ID.toString());
 
         // loading issuer public key
-        Locations.init(TestIssuance.ISSUER_ID.resolve("ipk.xml"),
-                TestIssuance.ISSUER_LOCATION.resolve("ipk.xml"));
+        Locations.init(TestIssuanceCard.ISSUER_ID.resolve("ipk.xml"),
+                TestIssuanceCard.ISSUER_LOCATION.resolve("ipk.xml"));
 
         // loading credential structures
         preloadCredStructs();
@@ -62,12 +61,12 @@ public class TestProofCard extends TestCase {
     private static final void loadCredStruct(String credStructName) {
         URI credStructLocation = null, credStructId = null;
         try {
-            credStructLocation = TestIssuance.BASE_LOCATION
+            credStructLocation = TestIssuanceCard.BASE_LOCATION
                     .resolve("../issuerData/" + credStructName + ".xml");
             credStructId = new URI("http://www.ngo.org/" + credStructName
                     + ".xml");
-        } catch (URISyntaxException e1) {
-            e1.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
 
         // loading credential structure linked to a URI
@@ -112,10 +111,10 @@ public class TestProofCard extends TestCase {
     private void serializeElements(String name, Proof p, BigInteger nonce) {
         // save the proof
         XMLSerializer.getInstance().serialize(p,
-                TestIssuance.BASE_LOCATION.resolve(getProofLocation(name)));
+                TestIssuanceCard.BASE_LOCATION.resolve(getProofLocation(name)));
         // save the nonce for the verification test case
         XMLSerializer.getInstance().serialize(nonce,
-                TestIssuance.BASE_LOCATION.resolve(getNonceLocation(name)));
+                TestIssuanceCard.BASE_LOCATION.resolve(getNonceLocation(name)));
     }
 
     /**
@@ -127,7 +126,7 @@ public class TestProofCard extends TestCase {
 
         // load the proof specification
         ProofSpec spec = (ProofSpec) StructureStore.getInstance().get(
-                TestIssuance.BASE_LOCATION
+                TestIssuanceCard.BASE_LOCATION
                         .resolve("../proofSpecifications/ProofSpecCard.xml"));
         System.out.println(spec.toStringPretty());
 
@@ -137,11 +136,11 @@ public class TestProofCard extends TestCase {
         System.out.println("Getting nonce.");
         BigInteger nonce = Verifier.getNonce(sp);
 
-        ProverInterface prover = null;
+        IdemixService prover = null;
         try {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
             prover = new IdemixService(new TerminalCardService(terminal));
-            ((IdemixService) prover).open();
+            prover.open();
         } catch (Exception e) {
             fail(e.getMessage()); 
             e.printStackTrace();            
@@ -163,15 +162,15 @@ public class TestProofCard extends TestCase {
 
         // load the proof specification
         ProofSpec spec = (ProofSpec) StructureStore.getInstance().get(
-                TestIssuance.BASE_LOCATION
+                TestIssuanceCard.BASE_LOCATION
                         .resolve("../proofSpecifications/ProofSpecCard.xml"));
         System.out.println(spec.toStringPretty());
 
         // load the proof
         Proof p = (Proof) Parser.getInstance().parse(
-                TestIssuance.BASE_LOCATION.resolve(getProofLocation(CL_CARD)));
+                TestIssuanceCard.BASE_LOCATION.resolve(getProofLocation(CL_CARD)));
         BigInteger nonce = (BigInteger) Parser.getInstance().parse(
-                TestIssuance.BASE_LOCATION.resolve(getNonceLocation(CL_CARD)));
+                TestIssuanceCard.BASE_LOCATION.resolve(getNonceLocation(CL_CARD)));
 
         // now p is sent to the verifier
         Verifier verifier = new Verifier(spec, p, nonce);

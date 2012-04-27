@@ -18,8 +18,6 @@ import service.IdemixService;
 import junit.framework.TestCase;
 
 import com.ibm.zurich.credsystem.utils.Locations;
-import com.ibm.zurich.idmx.api.RecipientInterface;
-import com.ibm.zurich.idmx.dm.Credential;
 import com.ibm.zurich.idmx.dm.MasterSecret;
 import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.issuance.IssuanceSpec;
@@ -27,7 +25,6 @@ import com.ibm.zurich.idmx.issuance.Issuer;
 import com.ibm.zurich.idmx.issuance.Message;
 import com.ibm.zurich.idmx.key.IssuerKeyPair;
 import com.ibm.zurich.idmx.utils.Constants;
-import com.ibm.zurich.idmx.utils.XMLSerializer;
 
 /**
  * Test cases to cover issuance of credentials.
@@ -42,13 +39,10 @@ public class TestIssuanceCard extends TestCase {
     public static URI BASE_ID = null;
     /** Id that is used within the test files to identify the elements. */
     public static URI ISSUER_ID = null;
-    /** Id that is used within the test files to identify the elements. */
-    public static URI TRUSTED_PARTY_ID = null;
     static {
         try {
             BASE_ID = new URI("http://www.zurich.ibm.com/security/idmx/v2/");
             ISSUER_ID = new URI("http://www.issuer.com/");
-            TRUSTED_PARTY_ID = new URI("http://www.un.org/");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -67,8 +61,6 @@ public class TestIssuanceCard extends TestCase {
     public static final BigInteger ATTRIBUTE_VALUE_4 = BigInteger.valueOf(1316);
     /** Attribute value 1317. */
     public static final BigInteger ATTRIBUTE_VALUE_5 = BigInteger.valueOf(1317);
-    /** Attribute value 1318. */
-    public static final BigInteger ATTRIBUTE_VALUE_6 = BigInteger.valueOf(1318);
 
     /**
      * Credential structure.
@@ -89,6 +81,7 @@ public class TestIssuanceCard extends TestCase {
      * <li>attr2:1314/ATTRIBUTE_VALUE_2</li>
      * <li>attr3:1315/ATTRIBUTE_VALUE_3</li>
      * <li>attr4:1316/ATTRIBUTE_VALUE_4</li>
+     * <li>attr5:1317/ATTRIBUTE_VALUE_5</li>
      * </ol>
      * 
      * @see TestIssuanceCard#CRED_STRUCT_CARD
@@ -97,6 +90,8 @@ public class TestIssuanceCard extends TestCase {
 
     /** Key pair of the issuer. */
     private IssuerKeyPair issuerKey = null;
+
+    // FIXME: This should go away eventually (secret generated on the card)
     /** Master secret to be used for this tests. */
     private MasterSecret masterSecret = null;
 
@@ -112,6 +107,7 @@ public class TestIssuanceCard extends TestCase {
         issuerKey = Locations.initIssuer(BASE_LOCATION, BASE_ID.toString(),
                 iskLocation, ipkLocation, ISSUER_ID.resolve("ipk.xml"));
 
+        // FIXME: This should go away eventually (secret generated on the card)
         URI masterSecretLocation = BASE_LOCATION.resolve("../private/ms.xml");
         masterSecret = Locations.loadMasterSecret(masterSecretLocation);
         if (masterSecret == null) {
@@ -124,9 +120,7 @@ public class TestIssuanceCard extends TestCase {
     /**
      * Executed upon finishing the test run.
      */
-    protected final void tearDown() {
-
-    }
+    protected final void tearDown() {}
 
     /**
      * Test: Reads the library version and fails if the version is not the
@@ -153,8 +147,8 @@ public class TestIssuanceCard extends TestCase {
             credStructLocation = BASE_LOCATION.resolve("../issuerData/"
                     + credStruct + ".xml");
             credStructId = new URI("http://www.ngo.org/" + credStruct + ".xml");
-        } catch (URISyntaxException e1) {
-            e1.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
 
         // loading credential structure linked to a URI
@@ -177,15 +171,15 @@ public class TestIssuanceCard extends TestCase {
         // run the issuance protocol.
         Issuer issuer = new Issuer(issuerKey, issuanceSpec, null, null, values);
 
-//        RecipientInterface recipient = new Recipient(issuanceSpec, masterSecret, values);        
-        RecipientInterface recipient = null;
+        IdemixService recipient = null;
         try {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
             recipient = new IdemixService(new TerminalCardService(terminal));
-            ((IdemixService) recipient).open();
-            ((IdemixService) recipient).setIssuanceSpecification(issuanceSpec);
-            ((IdemixService) recipient).setMasterSecret(masterSecret);
-            ((IdemixService) recipient).setAttributes(issuanceSpec, values);
+            recipient.open();
+            recipient.setIssuanceSpecification(issuanceSpec);
+            // FIXME: This should go away eventually (secret generated on the card)
+            recipient.setMasterSecret(masterSecret);
+            recipient.setAttributes(issuanceSpec, values);
         } catch (Exception e) {
             fail(e.getMessage()); 
             e.printStackTrace();            
