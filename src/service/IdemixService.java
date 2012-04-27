@@ -990,6 +990,9 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             for (int i = 0; i < disclosed.size(); i++) {
                 D[i] = (byte) Integer.parseInt(disclosed.get(i).replaceAll("[^0-9]", ""));
             }
+            
+            // Set the context for this proof
+            setContext(spec.getContext());
 
             // send the attribute disclosure selection
             CommandAPDU disclosure_d = new CommandAPDU(CLA_IDEMIX, 
