@@ -1046,25 +1046,35 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             sValues.put(pred.getTempCredName(), 
                     new SValue(new SValuesProveCL(eHat, vHatPrime)));
 
+            // receive the randomised master secret
+            CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
+                    INS_UNDISCLOSED_ATTRIBUTES, 0, 0);
+            ResponseAPDU response = transmit(command);
+            if (response.getSW() != 0x00009000) {
+                throw new CardServiceException("Could not get random " +
+                        "value (@index 0).", response.getSW());
+            }
+            BigInteger s = new BigInteger(1, response.getData());
+            sValues.put(IssuanceSpec.MASTER_SECRET_NAME, new SValue(s));
+
             // iterate over all the identifiers
-            int length = cred.getAttributeStructs().size();
             for (AttributeStructure attribute : cred.getAttributeStructs()) {
                 String attName = attribute.getName();
                 Identifier identifier = pred.getIdentifier(attName);
-                BigInteger s; int i = Integer.parseInt(attName);
+                int i = Integer.parseInt(attName.replaceAll("[^0-9]", ""));
                 if (identifier.isRevealed()) {
-                    CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
-                            INS_DISCLOSED_ATTRIBUTES, i, length);
-                    ResponseAPDU response = transmit(command);
+                    command = new CommandAPDU(CLA_IDEMIX,
+                    		INS_DISCLOSED_ATTRIBUTES, i, 0);
+                    response = transmit(command);
                     if (response.getSW() != 0x00009000) {
                         throw new CardServiceException("Could not get disclosed " +
                                 "attribute (@index " + i + ").", response.getSW());
                     }
                     s = new BigInteger(1, response.getData());
                 } else {
-                    CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
-                            INS_UNDISCLOSED_ATTRIBUTES, i, length + 1);
-                    ResponseAPDU response = transmit(command);
+                    command = new CommandAPDU(CLA_IDEMIX, 
+                            INS_UNDISCLOSED_ATTRIBUTES, i, 0);
+                    response = transmit(command);
                     if (response.getSW() != 0x00009000) {
                         throw new CardServiceException("Could not get random " +
                                 "value (@index " + i + ").", response.getSW());
