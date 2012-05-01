@@ -72,7 +72,7 @@ public class TestIssuanceCard extends TestCase {
      * <li>attr5: known: int</li>
      * </ol>
      */
-    public static final String CRED_STRUCT_CARD = "CredStructCard";
+    public static final String CRED_STRUCT_CARD = "CredStructCard4";
 
     /**
      * Credential.<br/>
@@ -166,7 +166,7 @@ public class TestIssuanceCard extends TestCase {
         values.add("attr2", ATTRIBUTE_VALUE_2);
         values.add("attr3", ATTRIBUTE_VALUE_3);
         values.add("attr4", ATTRIBUTE_VALUE_4);
-        values.add("attr5", ATTRIBUTE_VALUE_5);
+//        values.add("attr5", ATTRIBUTE_VALUE_5);
 
         // run the issuance protocol.
         Issuer issuer = new Issuer(issuerKey, issuanceSpec, null, null, values);

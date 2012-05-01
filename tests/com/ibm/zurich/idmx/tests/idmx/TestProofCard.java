@@ -127,7 +127,7 @@ public class TestProofCard extends TestCase {
         // load the proof specification
         ProofSpec spec = (ProofSpec) StructureStore.getInstance().get(
                 TestIssuanceCard.BASE_LOCATION
-                        .resolve("../proofSpecifications/ProofSpecCard.xml"));
+                        .resolve("../proofSpecifications/ProofSpecCard4.xml"));
         System.out.println(spec.toStringPretty());
 
         SystemParameters sp = spec.getGroupParams().getSystemParams();
@@ -163,7 +163,7 @@ public class TestProofCard extends TestCase {
         // load the proof specification
         ProofSpec spec = (ProofSpec) StructureStore.getInstance().get(
                 TestIssuanceCard.BASE_LOCATION
-                        .resolve("../proofSpecifications/ProofSpecCard.xml"));
+                        .resolve("../proofSpecifications/ProofSpecCard4.xml"));
         System.out.println(spec.toStringPretty());
 
         // load the proof
