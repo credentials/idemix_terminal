@@ -418,7 +418,8 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     public void setIssuanceSpecification(IssuanceSpec spec) 
     throws CardServiceException {
         // issuer parameters
-        setPublicKey(spec.getPublicKey());
+        setPublicKey(spec.getPublicKey(), 
+        		spec.getCredentialStructure().getAttributeStructs().size() + 1);
 
         // context
         setContext(spec.getContext());
@@ -434,7 +435,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * @param pubKey the public key to be set.
      * @throws CardServiceException if an error occurred.
      */
-    void setPublicKey(IssuerPublicKey pubKey) 
+    void setPublicKey(IssuerPublicKey pubKey, int pubKeyElements) 
     throws CardServiceException {
         CommandAPDU command_n = new CommandAPDU(CLA_IDEMIX, 
                 INS_SET_PUBLIC_KEY_N, 0x00, 0x00, fixLength(pubKey.getN()));
@@ -473,7 +474,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
         
         BigInteger[] pubKeyElement = pubKey.getCapR();
-        for (int i = 0; i < pubKeyElement.length; i++) {
+        for (int i = 0; i < pubKeyElements; i++) {
             CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                     INS_SET_PUBLIC_KEY_R, i, pubKeyElement.length, 
                     fixLength(pubKeyElement[i]));
