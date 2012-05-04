@@ -928,7 +928,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             BigInteger s_e = 
                 (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
             CommandAPDU proof_s_e = new CommandAPDU(CLA_IDEMIX, 
-                    INS_PROOF_A, 0x01, 0x00, BigIntegerToUnsignedByteArray(s_e));
+                    INS_PROOF_A, 0x01, 0x00, fixLength(s_e));
             ResponseAPDU response_s_e = transmit(proof_s_e);
             if (response_s_e.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof s_e.", 
