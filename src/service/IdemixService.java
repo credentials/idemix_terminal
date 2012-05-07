@@ -180,7 +180,6 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     private static final byte INS_SET_PUBLIC_KEY_Z = 0x01;
     private static final byte INS_SET_PUBLIC_KEY_S = 0x02;
     private static final byte INS_SET_PUBLIC_KEY_R = 0x03;
-    private static final byte INS_SET_CONTEXT = 0x04;
     private static final byte INS_SET_MASTER_SECRET = 0x05;
     private static final byte INS_SET_ATTRIBUTES = 0x06;
 
@@ -195,6 +194,9 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     private static final byte INS_GET_MASTER_SECRET = 0x35;
     private static final byte INS_GET_ATTRIBUTES = 0x36;
     private static final byte INS_GET_NUMBER_OF_ATTRIBUTES = 0x3C;
+
+    private static final byte INS_ISSUE_CONTEXT = 0x1F;
+    private static final byte INS_PROVE_CONTEXT = 0x2F;
 
     /**
      * SCUBA service to communicate with the card.
@@ -422,7 +424,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         		spec.getCredentialStructure().getAttributeStructs().size() + 1);
 
         // context
-        setContext(spec.getContext());
+        setIssuanceContext(spec.getContext());
     }
     
     /**
@@ -565,6 +567,16 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         return new IssuerPublicKey(null, S, Z, R, n, 0);
     }  
     
+    void setIssuanceContext(BigInteger context) 
+    throws CardServiceException {
+    	setContext(context, INS_ISSUE_CONTEXT);
+    }
+
+    void setProofContext(BigInteger context) 
+    throws CardServiceException {
+    	setContext(context, INS_PROVE_CONTEXT);
+    }
+    
     /**
      * Set the context: 
      * 
@@ -575,10 +587,10 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * @param context the context to be set.
      * @throws CardServiceException if an error occurred.
      */
-    void setContext(BigInteger context) 
+    void setContext(BigInteger context, int ins) 
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
-                INS_SET_CONTEXT, 0x00, 0x00, fixLength(context));
+                ins, 0x00, 0x00, fixLength(context));
         ResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
@@ -965,7 +977,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         TreeMap<String, BigInteger> commonList = 
             new TreeMap<String, BigInteger>();
 
-        List<String> disclosed = new Vector<String>();        
+        List<Integer> disclosed = new Vector<Integer>();        
         Predicate predicate = spec.getPredicates().firstElement();
         if (predicate.getPredicateType() != PredicateType.CL) {
             throw new RuntimeException("Unimplemented predicate.");
@@ -979,21 +991,22 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             String attName = attribute.getName();
             Identifier identifier = pred.getIdentifier(attName);
             if (identifier.isRevealed()) {
-                disclosed.add(attName);
+                disclosed.add(attribute.getKeyIndex());
             }
+        }
+        
+        // translate the List to a byte[] 
+        Collections.sort(disclosed);
+        byte[] D = new byte[disclosed.size()];
+        for (int i = 0; i < disclosed.size(); i++) {
+            D[i] = disclosed.get(i).byteValue();
         }
 
         // Hide CardServiceExceptions, instead return null on failure
         try {
-            // translate the List to a byte[] 
-            Collections.sort(disclosed);
-            byte[] D = new byte[disclosed.size()];
-            for (int i = 0; i < disclosed.size(); i++) {
-                D[i] = (byte) Integer.parseInt(disclosed.get(i).replaceAll("[^0-9]", ""));
-            }
             
             // Set the context for this proof
-            setContext(spec.getContext());
+            setProofContext(spec.getContext());
 
             // send the attribute disclosure selection
             CommandAPDU disclosure_d = new CommandAPDU(CLA_IDEMIX, 
@@ -1062,7 +1075,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             for (AttributeStructure attribute : cred.getAttributeStructs()) {
                 String attName = attribute.getName();
                 Identifier identifier = pred.getIdentifier(attName);
-                int i = Integer.parseInt(attName.replaceAll("[^0-9]", ""));
+                int i = attribute.getKeyIndex();
                 if (identifier.isRevealed()) {
                     command = new CommandAPDU(CLA_IDEMIX,
                     		INS_DISCLOSED_ATTRIBUTES, i, 0);
