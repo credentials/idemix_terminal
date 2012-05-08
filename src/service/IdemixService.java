@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
-
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.util.Hex;
 
@@ -244,7 +244,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * @return ResponseAPDU the response from the smart card.
      * @throws CardServiceException if some error occurred while transmitting.
      */
-    public ResponseAPDU transmit(CommandAPDU capdu) 
+    public IResponseAPDU transmit(ICommandAPDU capdu) 
     throws CardServiceException { 
 
         if (VERBOSE) {
@@ -253,7 +253,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
 
         long start = System.nanoTime();
-        ResponseAPDU rapdu = service.transmit(capdu);
+        IResponseAPDU rapdu = service.transmit(capdu);
         long duration = (System.nanoTime() - start)/1000000;
 
         if (VERBOSE) {
@@ -282,7 +282,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU select = new CommandAPDU(ISO7816.CLA_ISO7816,  
                 INS_SELECT, 0x04, 0x00, AID, 256); // LE == 0 is required.
-        ResponseAPDU response = transmit(select);
+        IResponseAPDU response = transmit(select);
         if (response.getSW() != 0x00009000) {
             throw new CardServiceException("Could not select the Idemix " +
                     "applet.", response.getSW());
@@ -300,7 +300,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                 INS_TESTMODE, mode, 0x00);
-        ResponseAPDU response = transmit(command);
+        IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             throw new CardServiceException("Could not set test mode.", 
                     response.getSW());
@@ -441,7 +441,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command_n = new CommandAPDU(CLA_IDEMIX, 
                 INS_SET_PUBLIC_KEY_N, 0x00, 0x00, fixLength(pubKey.getN()));
-        ResponseAPDU response_n = transmit(command_n);
+        IResponseAPDU response_n = transmit(command_n);
         if (response_n.getSW() != 0x00009000) {
             if (response_n.getSW() == 0x00006D00) {
                 notSupported("Could not set public key.");
@@ -453,7 +453,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         
         CommandAPDU command_z = new CommandAPDU(CLA_IDEMIX, 
                 INS_SET_PUBLIC_KEY_Z, 0x00, 0x00, fixLength(pubKey.getCapZ()));
-        ResponseAPDU response_z = transmit(command_z);
+        IResponseAPDU response_z = transmit(command_z);
         if (response_z.getSW() != 0x00009000) {
             if (response_z.getSW() == 0x00006D00) {
                 notSupported("Could not set public key.");
@@ -465,7 +465,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         
         CommandAPDU command_s = new CommandAPDU(CLA_IDEMIX, 
                 INS_SET_PUBLIC_KEY_S, 0x00, 0x00, fixLength(pubKey.getCapS()));
-        ResponseAPDU response_s = transmit(command_s);
+        IResponseAPDU response_s = transmit(command_s);
         if (response_s.getSW() != 0x00009000) {
             if (response_s.getSW() == 0x00006D00) {
                 notSupported("Could not set public key.");
@@ -480,7 +480,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                     INS_SET_PUBLIC_KEY_R, i, pubKeyElement.length, 
                     fixLength(pubKeyElement[i]));
-            ResponseAPDU response = transmit(command);
+            IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
                 if (response.getSW() == 0x00006D00) {
                     notSupported("Could not set public key elements.");
@@ -506,7 +506,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command_n = new CommandAPDU(CLA_IDEMIX, 
                 INS_GET_PUBLIC_KEY_N, 0x00, 0x00);
-        ResponseAPDU response_n = transmit(command_n);
+        IResponseAPDU response_n = transmit(command_n);
         if (response_n.getSW() != 0x00009000) {
             if (response_n.getSW() == 0x00006D00) {
                 notSupported("Could not get public key.");
@@ -520,7 +520,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         
         CommandAPDU command_z = new CommandAPDU(CLA_IDEMIX, 
                 INS_GET_PUBLIC_KEY_Z, 0x00, 0x00);
-        ResponseAPDU response_z = transmit(command_z);
+        IResponseAPDU response_z = transmit(command_z);
         if (response_z.getSW() != 0x00009000) {
             if (response_z.getSW() == 0x00006D00) {
                 notSupported("Could not get public key.");
@@ -534,7 +534,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         
         CommandAPDU command_s = new CommandAPDU(CLA_IDEMIX, 
                 INS_GET_PUBLIC_KEY_S, 0x00, 0x00);
-        ResponseAPDU response_s = transmit(command_s);
+        IResponseAPDU response_s = transmit(command_s);
         if (response_s.getSW() != 0x00009000) {
             if (response_s.getSW() == 0x00006D00) {
                 notSupported("Could not get public key.");
@@ -551,7 +551,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         for (int i = 0; i < R.length; i++) {
             CommandAPDU command_r = new CommandAPDU(CLA_IDEMIX, 
                     INS_GET_PUBLIC_KEY_R, i, R.length);
-            ResponseAPDU response_r = transmit(command_r);
+            IResponseAPDU response_r = transmit(command_r);
             if (response_r.getSW() != 0x00009000) {
                 if (response_r.getSW() == 0x00006D00) {
                     notSupported("Could not get public key elements.");
@@ -591,7 +591,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                 ins, 0x00, 0x00, fixLength(context));
-        ResponseAPDU response = transmit(command);
+        IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
                 notSupported("Could not set context.");
@@ -616,7 +616,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                 INS_GET_CONTEXT, 0x00, 0x00);
-        ResponseAPDU response = transmit(command);
+        IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
                 notSupported("Could not get context.");
@@ -644,7 +644,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                 INS_SET_MASTER_SECRET, 0x00, 0x00);
-        ResponseAPDU response = transmit(command);
+        IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
                 notSupported("Could not set master secret.");
@@ -671,7 +671,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                 INS_GET_MASTER_SECRET, 0x00, 0x00);
-        ResponseAPDU response = transmit(command);
+        IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
                 notSupported("Could not get master secret.");
@@ -704,7 +704,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             BigInteger attr = (BigInteger) values.get(struct.getName()).getContent();
             CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                     INS_SET_ATTRIBUTES, i++, structs.size(), fixLength(attr, l_m));
-            ResponseAPDU response = transmit(command);
+            IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
                 if (response.getSW() == 0x00006D00) {
                     notSupported("Could not set attributes.");
@@ -726,7 +726,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                 INS_GET_NUMBER_OF_ATTRIBUTES, 0x00, 0x00);
-        ResponseAPDU response = transmit(command);
+        IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             throw new CardServiceException("Could not get number of " +
                     "attributes.", response.getSW());
@@ -753,7 +753,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         for (AttributeStructure struct : structs) {
             CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                     INS_GET_ATTRIBUTES, i + 1, structs.size());
-            ResponseAPDU response = transmit(command);
+            IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
                 if (response.getSW() == 0x00006D00) {
                     notSupported("Could not get token attributes.");
@@ -787,7 +787,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                 INS_PRECOMPUTE_INPUTS, 0x00, 0x00);
-        ResponseAPDU response = transmit(command);
+        IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
                 notSupported("Could not perform precomputation.");
@@ -818,7 +818,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // send Nonce and receive U 
             CommandAPDU nonce_n1 = new CommandAPDU(CLA_IDEMIX, 
                     INS_NONCE1, 0x00, 0x00, BigIntegerToUnsignedByteArray(theNonce1));
-            ResponseAPDU response_n1 = transmit(nonce_n1);
+            IResponseAPDU response_n1 = transmit(nonce_n1);
             if (response_n1.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue nonce n1.", 
                         response_n1.getSW());
@@ -829,7 +829,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // receive Proof
             CommandAPDU proof_c = new CommandAPDU(CLA_IDEMIX, 
                     INS_PROOF_U, 0x00, 0x00);
-            ResponseAPDU response_c = transmit(proof_c);
+            IResponseAPDU response_c = transmit(proof_c);
             if (response_c.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof c.", 
                         response_c.getSW());
@@ -838,7 +838,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             CommandAPDU proof_vHatPrime = new CommandAPDU(CLA_IDEMIX, 
                     INS_PROOF_U, 0x01, 0x00);
-            ResponseAPDU response_vHatPrime = transmit(proof_vHatPrime);
+            IResponseAPDU response_vHatPrime = transmit(proof_vHatPrime);
             if (response_vHatPrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof v^'.", 
                         response_vHatPrime.getSW());
@@ -848,7 +848,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             CommandAPDU proof_s_A = new CommandAPDU(CLA_IDEMIX, 
                     INS_PROOF_U, 0x02, 0x00);
-            ResponseAPDU response_s_A = transmit(proof_s_A);
+            IResponseAPDU response_s_A = transmit(proof_s_A);
             if (response_s_A.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof s_A.", 
                         response_s_A.getSW());
@@ -859,7 +859,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // receive Nonce
             CommandAPDU nonce_n2 = new CommandAPDU(CLA_IDEMIX, 
                     INS_NONCE2, 0x00, 0x00);
-            ResponseAPDU response_n2 = transmit(nonce_n2);
+            IResponseAPDU response_n2 = transmit(nonce_n2);
             if (response_n2.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue nonce n2.", 
                         response_n2.getSW());
@@ -895,7 +895,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             BigInteger capA = msg.getIssuanceElement(IssuanceProtocolValues.capA);
             CommandAPDU signature_capA = new CommandAPDU(CLA_IDEMIX, 
                     INS_SIGNATURE, 0x00, 0x00, BigIntegerToUnsignedByteArray(capA));
-            ResponseAPDU response_capA = transmit(signature_capA);
+            IResponseAPDU response_capA = transmit(signature_capA);
             if (response_capA.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue signature A.", 
                         response_capA.getSW());
@@ -904,7 +904,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             BigInteger e = msg.getIssuanceElement(IssuanceProtocolValues.e);
             CommandAPDU signature_e = new CommandAPDU(CLA_IDEMIX, 
                     INS_SIGNATURE, 0x01, 0x00, BigIntegerToUnsignedByteArray(e));
-            ResponseAPDU response_e = transmit(signature_e);
+            IResponseAPDU response_e = transmit(signature_e);
             if (response_e.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue signature e.", 
                         response_e.getSW());
@@ -914,7 +914,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
                 msg.getIssuanceElement(IssuanceProtocolValues.vPrimePrime);
             CommandAPDU signature_vPrimePrime = new CommandAPDU(CLA_IDEMIX, 
                     INS_SIGNATURE, 0x02, 0x00, BigIntegerToUnsignedByteArray(vPrimePrime));
-            ResponseAPDU response_vPrimePrime = transmit(signature_vPrimePrime);
+            IResponseAPDU response_vPrimePrime = transmit(signature_vPrimePrime);
             if (response_vPrimePrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue signature v''.", 
                         response_vPrimePrime.getSW());
@@ -922,7 +922,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             CommandAPDU signature_verify = new CommandAPDU(CLA_IDEMIX, 
                     INS_SIGNATURE, 0x03, 0x00);
-            ResponseAPDU response_verify = transmit(signature_verify);
+            IResponseAPDU response_verify = transmit(signature_verify);
             if (response_verify.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not verify issued signature.", 
                         response_verify.getSW());
@@ -932,7 +932,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             BigInteger cPrime = msg.getProof().getChallenge();
             CommandAPDU proof_cPrime = new CommandAPDU(CLA_IDEMIX, 
                     INS_PROOF_A, 0x00, 0x00, BigIntegerToUnsignedByteArray(cPrime));
-            ResponseAPDU response_cPrime = transmit(proof_cPrime);
+            IResponseAPDU response_cPrime = transmit(proof_cPrime);
             if (response_cPrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof c'.", 
                         response_cPrime.getSW());
@@ -942,7 +942,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
                 (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
             CommandAPDU proof_s_e = new CommandAPDU(CLA_IDEMIX, 
                     INS_PROOF_A, 0x01, 0x00, fixLength(s_e));
-            ResponseAPDU response_s_e = transmit(proof_s_e);
+            IResponseAPDU response_s_e = transmit(proof_s_e);
             if (response_s_e.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof s_e.", 
                         response_s_e.getSW());
@@ -950,7 +950,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             CommandAPDU proof_verify = new CommandAPDU(CLA_IDEMIX, 
                     INS_PROOF_A, 0x02, 0x00);
-            ResponseAPDU response_proof = transmit(proof_verify);
+            IResponseAPDU response_proof = transmit(proof_verify);
             if (response_proof.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not verify proof.", 
                         response_verify.getSW());
@@ -1012,7 +1012,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // send the attribute disclosure selection
             CommandAPDU disclosure_d = new CommandAPDU(CLA_IDEMIX, 
                     INS_ATTRIBUTE_DISCLOSURE, 0x00, 0x00, D);
-            ResponseAPDU response_d = transmit(disclosure_d);
+            IResponseAPDU response_d = transmit(disclosure_d);
             if (response_d.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not set attribute " +
                         "disclosure selection.", response_d.getSW());
@@ -1021,7 +1021,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // send and receive the challenge
             CommandAPDU challenge_c = new CommandAPDU(CLA_IDEMIX, 
                     INS_CHALLENGE, 0x00, 0x00, BigIntegerToUnsignedByteArray(nonce));
-            ResponseAPDU response_c = transmit(challenge_c);
+            IResponseAPDU response_c = transmit(challenge_c);
             if (response_c.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not set the challenge " +
                 		"n1.", response_c.getSW());
@@ -1031,7 +1031,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // receive the randomised signature
             CommandAPDU signature_capAPrime = new CommandAPDU(CLA_IDEMIX, 
                     INS_RANDOM_SIGNATURE, 0x00, 0x00);
-            ResponseAPDU response_capAPrime = transmit(signature_capAPrime);
+            IResponseAPDU response_capAPrime = transmit(signature_capAPrime);
             if (response_capAPrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not get the random " +
                 		"signature A'.", response_capAPrime.getSW());
@@ -1041,7 +1041,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             CommandAPDU signature_eHat = new CommandAPDU(CLA_IDEMIX, 
                     INS_RANDOM_SIGNATURE, 0x01, 0x00);
-            ResponseAPDU response_eHat = transmit(signature_eHat);
+            IResponseAPDU response_eHat = transmit(signature_eHat);
             if (response_eHat.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not get the random " +
                 		"signature e^.", response_eHat.getSW());
@@ -1050,7 +1050,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             CommandAPDU signature_vHatPrime = new CommandAPDU(CLA_IDEMIX, 
                     INS_RANDOM_SIGNATURE, 0x02, 0x00);
-            ResponseAPDU response_vHatPrime = transmit(signature_vHatPrime);
+            IResponseAPDU response_vHatPrime = transmit(signature_vHatPrime);
             if (response_vHatPrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not get the random " +
                 		"signature v^'.", response_vHatPrime.getSW());
@@ -1064,7 +1064,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // receive the randomised master secret
             CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                     INS_UNDISCLOSED_ATTRIBUTES, 0, 0);
-            ResponseAPDU response = transmit(command);
+            IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not get random " +
                         "value (@index 0).", response.getSW());
