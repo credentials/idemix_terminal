@@ -55,6 +55,7 @@ import com.ibm.zurich.idmx.showproof.predicates.Predicate.PredicateType;
 import com.ibm.zurich.idmx.showproof.sval.SValue;
 import com.ibm.zurich.idmx.showproof.sval.SValuesProveCL;
 import com.ibm.zurich.idmx.utils.StructureStore;
+import com.ibm.zurich.idmx.utils.SystemParameters;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
@@ -202,6 +203,11 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * SCUBA service to communicate with the card.
      */
     protected CardService service;
+
+    /**
+     * Keep the systemParameters around for length checks
+     */
+    protected SystemParameters sysPars;
 
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
@@ -355,50 +361,28 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     }
     
     /**
-     * Fix the length of arrays put into the APDUs.
-     * 
-     * @param array of which the length needs to be fixed.
-     * @return an array with a fixed length.
-     */
-    public static byte[] fixLength(byte[] array) {        
-        if (array.length % 4 == 0) {
-            return array;
-        } else {
-            int padding = 4 - array.length % 4;
-            byte[] fixed = new byte[array.length + padding];
-            Arrays.fill(fixed, (byte) 0x00);
-            System.arraycopy(array, 0, fixed, padding, array.length);
-            return fixed;
-        }
-    }
-    
-    /**
      * Fix the length of array representation of BigIntegers put into the APDUs.
      * 
      * @param integer of which the length needs to be fixed.
+     * @param the new length of the integer in bits
      * @return an array with a fixed length.
      */
-    public static byte[] fixLength(BigInteger integer) {
-        return fixLength(BigIntegerToUnsignedByteArray(integer));
-    }
-    
-    /**
-     * Fix the length of array representation of BigIntegers put into the APDUs.
-     * 
-     * @param integer of which the length needs to be fixed.
-     * @return an array with a fixed length.
-     */
-    public static byte[] fixLength(BigInteger integer, int length) {
+    public static byte[] fixLength(BigInteger integer, int length_in_bits) {
         byte[] array = BigIntegerToUnsignedByteArray(integer);
-        if (array.length <= length) {
-            int padding = length - array.length;
-            byte[] fixed = new byte[length];
-            Arrays.fill(fixed, (byte) 0x00);
-            System.arraycopy(array, 0, fixed, padding, array.length);
-            return fixed;
-        } else {
-            return fixLength(array);
+        int length;
+        
+        length = length_in_bits/8;
+        if (length_in_bits % 8 != 0){
+        	length++;
         }
+        
+        assert (array.length <= length);
+        
+        int padding = length - array.length;
+        byte[] fixed = new byte[length];
+        Arrays.fill(fixed, (byte) 0x00);
+        System.arraycopy(array, 0, fixed, padding, array.length);
+        return fixed;
     }
 
     /**************************************************************************/
@@ -419,8 +403,10 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     public void setIssuanceSpecification(IssuanceSpec spec) 
     throws CardServiceException {
-        // issuer parameters
-        setPublicKey(spec.getPublicKey(), 
+    	sysPars = spec.getPublicKey().getGroupParams().getSystemParams();
+        
+    	// issuer parameters
+    	setPublicKey(spec.getPublicKey(), 
         		spec.getCredentialStructure().getAttributeStructs().size() + 1);
 
         // context
@@ -439,8 +425,9 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     void setPublicKey(IssuerPublicKey pubKey, int pubKeyElements) 
     throws CardServiceException {
+    	int l_n = sysPars.getL_n();
         CommandAPDU command_n = new CommandAPDU(CLA_IDEMIX, 
-                INS_SET_PUBLIC_KEY_N, 0x00, 0x00, fixLength(pubKey.getN()));
+                INS_SET_PUBLIC_KEY_N, 0x00, 0x00, fixLength(pubKey.getN(), l_n));
         IResponseAPDU response_n = transmit(command_n);
         if (response_n.getSW() != 0x00009000) {
             if (response_n.getSW() == 0x00006D00) {
@@ -452,7 +439,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
         
         CommandAPDU command_z = new CommandAPDU(CLA_IDEMIX, 
-                INS_SET_PUBLIC_KEY_Z, 0x00, 0x00, fixLength(pubKey.getCapZ()));
+                INS_SET_PUBLIC_KEY_Z, 0x00, 0x00, fixLength(pubKey.getCapZ(), l_n));
         IResponseAPDU response_z = transmit(command_z);
         if (response_z.getSW() != 0x00009000) {
             if (response_z.getSW() == 0x00006D00) {
@@ -464,7 +451,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
         
         CommandAPDU command_s = new CommandAPDU(CLA_IDEMIX, 
-                INS_SET_PUBLIC_KEY_S, 0x00, 0x00, fixLength(pubKey.getCapS()));
+                INS_SET_PUBLIC_KEY_S, 0x00, 0x00, fixLength(pubKey.getCapS(), l_n));
         IResponseAPDU response_s = transmit(command_s);
         if (response_s.getSW() != 0x00009000) {
             if (response_s.getSW() == 0x00006D00) {
@@ -479,7 +466,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         for (int i = 0; i < pubKeyElements; i++) {
             CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
                     INS_SET_PUBLIC_KEY_R, i, pubKeyElement.length, 
-                    fixLength(pubKeyElement[i]));
+                    fixLength(pubKeyElement[i], l_n));
             IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
                 if (response.getSW() == 0x00006D00) {
@@ -590,7 +577,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     void setContext(BigInteger context, int ins) 
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
-                ins, 0x00, 0x00, fixLength(context));
+                ins, 0x00, 0x00, fixLength(context, sysPars.getL_H()));
         IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
@@ -699,11 +686,11 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     public void setAttributes(IssuanceSpec spec, Values values) 
     throws CardServiceException {
         Vector<AttributeStructure> structs = spec.getCredentialStructure().getAttributeStructs();
-        int i = 1, l_m = spec.getPublicKey().getGroupParams().getSystemParams().getL_m()/8;
+        int i = 1;
         for (AttributeStructure struct : structs) {
             BigInteger attr = (BigInteger) values.get(struct.getName()).getContent();
             CommandAPDU command = new CommandAPDU(CLA_IDEMIX, 
-                    INS_SET_ATTRIBUTES, i++, structs.size(), fixLength(attr, l_m));
+                    INS_SET_ATTRIBUTES, i++, structs.size(), fixLength(attr, sysPars.getL_m()));
             IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
                 if (response.getSW() == 0x00006D00) {
@@ -817,7 +804,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         try {
             // send Nonce and receive U 
             CommandAPDU nonce_n1 = new CommandAPDU(CLA_IDEMIX, 
-                    INS_NONCE1, 0x00, 0x00, BigIntegerToUnsignedByteArray(theNonce1));
+                    INS_NONCE1, 0x00, 0x00, fixLength(theNonce1,sysPars.getL_Phi()));
             IResponseAPDU response_n1 = transmit(nonce_n1);
             if (response_n1.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue nonce n1.", 
@@ -894,7 +881,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // send Signature
             BigInteger capA = msg.getIssuanceElement(IssuanceProtocolValues.capA);
             CommandAPDU signature_capA = new CommandAPDU(CLA_IDEMIX, 
-                    INS_SIGNATURE, 0x00, 0x00, BigIntegerToUnsignedByteArray(capA));
+                    INS_SIGNATURE, 0x00, 0x00, fixLength(capA, sysPars.getL_n()));
             IResponseAPDU response_capA = transmit(signature_capA);
             if (response_capA.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue signature A.", 
@@ -903,7 +890,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             BigInteger e = msg.getIssuanceElement(IssuanceProtocolValues.e);
             CommandAPDU signature_e = new CommandAPDU(CLA_IDEMIX, 
-                    INS_SIGNATURE, 0x01, 0x00, BigIntegerToUnsignedByteArray(e));
+                    INS_SIGNATURE, 0x01, 0x00, fixLength(e, sysPars.getL_e()));
             IResponseAPDU response_e = transmit(signature_e);
             if (response_e.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue signature e.", 
@@ -913,7 +900,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             BigInteger vPrimePrime = 
                 msg.getIssuanceElement(IssuanceProtocolValues.vPrimePrime);
             CommandAPDU signature_vPrimePrime = new CommandAPDU(CLA_IDEMIX, 
-                    INS_SIGNATURE, 0x02, 0x00, BigIntegerToUnsignedByteArray(vPrimePrime));
+                    INS_SIGNATURE, 0x02, 0x00, fixLength(vPrimePrime, sysPars.getL_v()));
             IResponseAPDU response_vPrimePrime = transmit(signature_vPrimePrime);
             if (response_vPrimePrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue signature v''.", 
@@ -931,7 +918,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             // send Proof 
             BigInteger cPrime = msg.getProof().getChallenge();
             CommandAPDU proof_cPrime = new CommandAPDU(CLA_IDEMIX, 
-                    INS_PROOF_A, 0x00, 0x00, BigIntegerToUnsignedByteArray(cPrime));
+                    INS_PROOF_A, 0x00, 0x00, fixLength(cPrime, sysPars.getL_H()));
             IResponseAPDU response_cPrime = transmit(proof_cPrime);
             if (response_cPrime.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof c'.", 
@@ -941,7 +928,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             BigInteger s_e = 
                 (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
             CommandAPDU proof_s_e = new CommandAPDU(CLA_IDEMIX, 
-                    INS_PROOF_A, 0x01, 0x00, fixLength(s_e));
+                    INS_PROOF_A, 0x01, 0x00, fixLength(s_e, sysPars.getL_n()));
             IResponseAPDU response_s_e = transmit(proof_s_e);
             if (response_s_e.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not issue proof s_e.", 
@@ -1020,7 +1007,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
 
             // send and receive the challenge
             CommandAPDU challenge_c = new CommandAPDU(CLA_IDEMIX, 
-                    INS_CHALLENGE, 0x00, 0x00, BigIntegerToUnsignedByteArray(nonce));
+                    INS_CHALLENGE, 0x00, 0x00, fixLength(nonce, sysPars.getL_Phi()));
             IResponseAPDU response_c = transmit(challenge_c);
             if (response_c.getSW() != 0x00009000) {
                 throw new CardServiceException("Could not set the challenge " +
