@@ -393,13 +393,15 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     public void setIssuanceSpecification(IssuanceSpec spec) 
     throws CardServiceException {
+    	
+    	// Set the system parameters for this protocol run
     	sysPars = spec.getPublicKey().getGroupParams().getSystemParams();
         
-    	// issuer parameters
+    	// Set the issuer public key
     	setPublicKey(spec.getPublicKey(), 
         		spec.getCredentialStructure().getAttributeStructs().size() + 1);
 
-        // context
+        // Set the issuance context
         setIssuanceContext(spec.getContext());
     }
     
@@ -752,6 +754,9 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         TreeMap<String, BigInteger> commonList = 
             new TreeMap<String, BigInteger>();
 
+        // Set the system parameters for this protocol run
+        sysPars = spec.getGroupParams().getSystemParams();
+        
         List<Integer> disclosed = new Vector<Integer>();        
         Predicate predicate = spec.getPredicates().firstElement();
         if (predicate.getPredicateType() != PredicateType.CL) {
