@@ -495,6 +495,8 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
                 notSupported("Could not start issuance.");
+            } else if (response.getSW() == 0x00006986) {
+            	throw new CardServiceException("Could not issue credential, already issued.");
             } else {
                 throw new CardServiceException("Could not start issuance.", 
                         response.getSW());
