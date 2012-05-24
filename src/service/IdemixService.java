@@ -103,7 +103,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     /**
      * INStruction to generate the master secret on the card.
      */
-    private static final byte INS_GENERATE_SECRET = 0x05;
+    private static final byte INS_GENERATE_SECRET = 0x01;
 
     /**
      * INStruction to start issuing a credential (and to set the corresponding
