@@ -38,7 +38,6 @@ import net.sourceforge.scuba.util.Hex;
 import com.ibm.zurich.idmx.api.ProverInterface;
 import com.ibm.zurich.idmx.api.RecipientInterface;
 import com.ibm.zurich.idmx.dm.Credential;
-import com.ibm.zurich.idmx.dm.MasterSecret;
 import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
 import com.ibm.zurich.idmx.dm.structure.CredentialStructure;
@@ -81,11 +80,6 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     private static final byte[] AID = {0x69, 0x64, 0x65, 0x6D, 0x69, 0x78};
 
     /**
-     * CLAss to be used for Idemix APDUs.
-     */
-    private static final byte CLA_IDEMIX = 0x00;
-
-    /**
      * INStruction to select an applet.
      */
     private static final byte INS_SELECT = (byte) 0xA4;
@@ -94,83 +88,116 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * P1 parameter for select by name.
      */
     private static final byte P1_SELECT = 0x04;
+
+    /**
+     * CLAss to be used for Idemix APDUs.
+     */
+    private static final byte CLA_IDEMIX = (byte) 0x80;
+
+    /**
+     * INStruction to select a credential on the card.
+     */
+    @SuppressWarnings("unused")
+	private static final byte INS_SELECT_CREDENTIAL = 0x00;
     
+    /**
+     * INStruction to generate the master secret on the card.
+     */
+    private static final byte INS_GENERATE_SECRET = 0x05;
+
+    /**
+     * INStruction to start issuing a credential (and to set the corresponding
+     * context).
+     */
+    private static final byte INS_ISSUE_CREDENTIAL = 0x10;
+
+    /**
+     * INStruction to issue the n value from the issuer public key. 
+     */
+    private static final byte INS_ISSUE_PUBLIC_KEY_N = 0x11;
+
+    /**
+     * INStruction to issue the z value from the issuer public key. 
+     */
+    private static final byte INS_ISSUE_PUBLIC_KEY_Z = 0x12;
+    
+    /**
+     * INStruction to issue the s value from the issuer public key. 
+     */
+    private static final byte INS_ISSUE_PUBLIC_KEY_S = 0x13;
+    
+    /**
+     * INStruction to issue the R values from the issuer public key. 
+     */
+    private static final byte INS_ISSUE_PUBLIC_KEY_R = 0x14;
+    
+    /**
+     * INStruction to issue the attributes. 
+     */
+    private static final byte INS_ISSUE_ATTRIBUTES = 0x15;
+
     /**
      * INStruction to send the first nonce (n_1) and compute/receive the 
      * combined hidden attributes (U).
-     * 
-     * @protocol token issuance.
      */
-    private static final byte INS_ISSUE_NONCE_1 = 0x10;
+    private static final byte INS_ISSUE_NONCE_1 = 0x16;
 
     /**
      * INStruction to receive the zero-knowledge proof for correct construction 
      * of U (c, v^', s_A). 
-     * 
-     * @protocol token issuance.
      */
-    private static final byte INS_ISSUE_PROOF_U = 0x11;
+    private static final byte INS_ISSUE_PROOF_U = 0x17;
 
     /**
      * INStruction to receive the second nonce (n_2). 
-     * 
-     * @protocol token issuance.
      */
-    private static final byte INS_ISSUE_NONCE_2 = 0x12;
+    private static final byte INS_ISSUE_NONCE_2 = 0x18;
 
     /**
      * INStruction to send the blind signature (A, e, v''). 
-     * 
-     * @protocol token issuance.
      */
-    private static final byte INS_ISSUE_SIGNATURE = 0x13;
+    private static final byte INS_ISSUE_SIGNATURE = 0x19;
 
     /**
      * INStruction to send the zero-knowledge proof for correct construction of 
      * the signature (s_e, c'). 
-     * 
-     * @protocol token issuance.
      */
-    private static final byte INS_ISSUE_PROOF_A = 0x14;
+    private static final byte INS_ISSUE_PROOF_A = 0x1A;
+
+    /**
+     * INStruction to start proving aattributes from a credential (and to set 
+     * the corresponding context).
+     */
+    private static final byte INS_PROVE_CREDENTIAL = 0x20;
 
     /**
      * INStruction to send the list of attributes to be disclosed.
-     * 
-     * @protocol attribute disclosure / presentation proof generation. 
      */
-    private static final byte INS_PROVE_SELECTION = 0x20;
+    private static final byte INS_PROVE_SELECTION = 0x21;
 
     /**
      * INStruction to send the challenge (m) to be signed in the proof and 
      * receive the commitment for the proof (a). 
-     * 
-     * @protocol attribute disclosure / presentation proof generation. 
      */
-    private static final byte INS_PROVE_NONCE = 0x21;
+    private static final byte INS_PROVE_NONCE = 0x22;
 
     /**
      * INStruction to receive the values A', e^ and v^. 
-     * 
-     * @protocol attribute disclosure / proof generation. 
      */
-    private static final byte INS_PROVE_SIGNATURE = 0x22;
+    private static final byte INS_PROVE_SIGNATURE = 0x23;
 
     /**
      * INStruction to receive the disclosed attributes (A_i).
-     * 
-     * @protocol attribute disclosure / proof generation. 
      */
-    private static final byte INS_PROVE_ATTRIBUTE = 0x23;
+    private static final byte INS_PROVE_ATTRIBUTE = 0x24;
 
     /**
      * INStruction to receive the values for the undisclosed attributes (r_i). 
-     * 
-     * @protocol attribute disclosure / proof generation. 
      */
-    private static final byte INS_PROVE_RESPONSE = 0x24;
+    private static final byte INS_PROVE_RESPONSE = 0x25;
 
     /**
-     * P1 parameters for PROOF_U data instructions. 
+     * P1 parameter for the PROOF_U data instructions. 
      */
     private static final byte P1_PROOF_U_C = 0x00;
     private static final byte P1_PROOF_U_VPRIMEHAT = 0x01;
@@ -190,22 +217,6 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     private static final byte P1_PROOF_A_C = 0x00;
     private static final byte P1_PROOF_A_S_E = 0x01;
     private static final byte P1_PROOF_A_VERIFY = 0x02;
-
-    /**
-     * Initialisation instructions (setters).
-     */
-    private static final byte INS_SET_PUBLIC_KEY_N = 0x00;
-    private static final byte INS_SET_PUBLIC_KEY_Z = 0x01;
-    private static final byte INS_SET_PUBLIC_KEY_S = 0x02;
-    private static final byte INS_SET_PUBLIC_KEY_R = 0x03;
-    private static final byte INS_SET_MASTER_SECRET = 0x05;
-    private static final byte INS_SET_ATTRIBUTES = 0x06;
-
-    /**
-     * Context INStructions.
-     */
-    private static final byte INS_ISSUE_CONTEXT = 0x1F;
-    private static final byte INS_PROVE_CONTEXT = 0x2F;
 
     /**
      * SCUBA service to communicate with the card.
@@ -393,16 +404,17 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     public void setIssuanceSpecification(IssuanceSpec spec) 
     throws CardServiceException {
+    	short id = 1; // FIXME: derive this id somehow
     	
     	// Set the system parameters for this protocol run
     	sysPars = spec.getPublicKey().getGroupParams().getSystemParams();
         
+        // Set the issuance context
+        startIssuance(id, spec.getContext());
+        
     	// Set the issuer public key
     	setPublicKey(spec.getPublicKey(), 
         		spec.getCredentialStructure().getAttributeStructs().size() + 1);
-
-        // Set the issuance context
-        setIssuanceContext(spec.getContext());
     }
     
     /**
@@ -419,7 +431,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     throws CardServiceException {
     	int l_n = sysPars.getL_n();
         CommandAPDU command_n = new CommandAPDU(
-        		CLA_IDEMIX, INS_SET_PUBLIC_KEY_N, 0x00, 0x00, 
+        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_N, 0x00, 0x00, 
                 fixLength(pubKey.getN(), l_n));
         IResponseAPDU response_n = transmit(command_n);
         if (response_n.getSW() != 0x00009000) {
@@ -432,7 +444,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
         
         CommandAPDU command_z = new CommandAPDU(
-        		CLA_IDEMIX, INS_SET_PUBLIC_KEY_Z, 0x00, 0x00, 
+        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_Z, 0x00, 0x00, 
                 fixLength(pubKey.getCapZ(), l_n));
         IResponseAPDU response_z = transmit(command_z);
         if (response_z.getSW() != 0x00009000) {
@@ -445,7 +457,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
         
         CommandAPDU command_s = new CommandAPDU(
-        		CLA_IDEMIX, INS_SET_PUBLIC_KEY_S, 0x00, 0x00, 
+        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_S, 0x00, 0x00, 
         		fixLength(pubKey.getCapS(), l_n));
         IResponseAPDU response_s = transmit(command_s);
         if (response_s.getSW() != 0x00009000) {
@@ -460,7 +472,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         BigInteger[] pubKeyElement = pubKey.getCapR();
         for (int i = 0; i < pubKeyElements; i++) {
             CommandAPDU command = new CommandAPDU(
-            		CLA_IDEMIX, INS_SET_PUBLIC_KEY_R, i, 0x00, 
+            		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_R, i, 0x00, 
             		fixLength(pubKeyElement[i], l_n));
             IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
@@ -474,64 +486,59 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
     }
 
-    void setIssuanceContext(BigInteger context) 
-    throws CardServiceException {
-    	setContext(context, INS_ISSUE_CONTEXT);
-    }
-
-    void setProofContext(BigInteger context) 
-    throws CardServiceException {
-    	setContext(context, INS_PROVE_CONTEXT);
-    }
-    
-    /**
-     * Set the context: 
-     * 
-     * <pre>
-     *   context
-     * </pre>
-     * 
-     * @param context the context to be set.
-     * @throws CardServiceException if an error occurred.
-     */
-    void setContext(BigInteger context, int instructionByte) 
+    void startIssuance(short id, BigInteger context) 
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(
-        		CLA_IDEMIX, instructionByte, 0x00, 0x00, 
+        		CLA_IDEMIX, INS_ISSUE_CREDENTIAL, id >> 8, id & 0xff, 
         		fixLength(context, sysPars.getL_H()));
         IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
-                notSupported("Could not set context.");
+                notSupported("Could not start issuance.");
             } else {
-                throw new CardServiceException("Could not set context.", 
+                throw new CardServiceException("Could not start issuance.", 
                         response.getSW());
             }
         }
     }
 
+    void startProof(short id, BigInteger context) 
+    throws CardServiceException {
+        CommandAPDU command = new CommandAPDU(
+        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff, 
+        		fixLength(context, sysPars.getL_H()));
+        IResponseAPDU response = transmit(command);
+        if (response.getSW() != 0x00009000) {
+            if (response.getSW() == 0x00006D00) {
+                notSupported("Could not start proving.");
+            } else {
+                throw new CardServiceException("Could not start proving.", 
+                        response.getSW());
+            }
+        }
+    }
+    
     /**
-     * Set or generate the master secret: 
+     * Generate the master secret: 
      * 
      * <pre>
      *   m_0
      * </pre>
      * 
-     * @param masterSecret the master secret to be set or null to generate one.
      * @throws CardServiceException if an error occurred.
      */
-    public void setMasterSecret(MasterSecret masterSecret) 
+    public void generateMasterSecret() 
     throws CardServiceException {
         CommandAPDU command = new CommandAPDU(
-        		CLA_IDEMIX, INS_SET_MASTER_SECRET, 0x00, 0x00);
+        		CLA_IDEMIX, INS_GENERATE_SECRET, 0x00, 0x00);
         IResponseAPDU response = transmit(command);
         if (response.getSW() != 0x00009000) {
             if (response.getSW() == 0x00006D00) {
-                notSupported("Could not set master secret.");
+                notSupported("Could not generate master secret.");
             } else if (response.getSW() == 0x00006986) {
-                System.err.println("Could not set master secret, already set.");
+                System.err.println("Could not generate master secret, already set.");
             } else {
-                throw new CardServiceException("Could not set master secret.", 
+                throw new CardServiceException("Could not generate master secret.", 
                         response.getSW());
             }
         }
@@ -555,7 +562,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         for (AttributeStructure struct : structs) {
             BigInteger attr = (BigInteger) values.get(struct.getName()).getContent();
             CommandAPDU command = new CommandAPDU(
-            		CLA_IDEMIX, INS_SET_ATTRIBUTES, i++, 0x00, 
+            		CLA_IDEMIX, INS_ISSUE_ATTRIBUTES, i++, 0x00, 
                     fixLength(attr, sysPars.getL_m()));
             IResponseAPDU response = transmit(command);
             if (response.getSW() != 0x00009000) {
@@ -758,6 +765,8 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         sysPars = spec.getGroupParams().getSystemParams();
         
         List<Integer> disclosed = new Vector<Integer>();        
+    	short id = 1; // FIXME: derive this id somehow
+
         Predicate predicate = spec.getPredicates().firstElement();
         if (predicate.getPredicateType() != PredicateType.CL) {
             throw new RuntimeException("Unimplemented predicate.");
@@ -786,7 +795,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         try {
             
             // Set the context for this proof
-            setProofContext(spec.getContext());
+            startProof(id, spec.getContext());
 
             // send the attribute disclosure selection
             CommandAPDU disclosure_d = new CommandAPDU(

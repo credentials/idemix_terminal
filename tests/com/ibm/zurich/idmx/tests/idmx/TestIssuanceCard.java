@@ -18,7 +18,6 @@ import service.IdemixService;
 import junit.framework.TestCase;
 
 import com.ibm.zurich.credsystem.utils.Locations;
-import com.ibm.zurich.idmx.dm.MasterSecret;
 import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.issuance.IssuanceSpec;
 import com.ibm.zurich.idmx.issuance.Issuer;
@@ -91,10 +90,6 @@ public class TestIssuanceCard extends TestCase {
     /** Key pair of the issuer. */
     private IssuerKeyPair issuerKey = null;
 
-    // FIXME: This should go away eventually (secret generated on the card)
-    /** Master secret to be used for this tests. */
-    private MasterSecret masterSecret = null;
-
     /**
      * Setup of the test environment.
      */
@@ -106,15 +101,6 @@ public class TestIssuanceCard extends TestCase {
 
         issuerKey = Locations.initIssuer(BASE_LOCATION, BASE_ID.toString(),
                 iskLocation, ipkLocation, ISSUER_ID.resolve("ipk.xml"));
-
-        // FIXME: This should go away eventually (secret generated on the card)
-        URI masterSecretLocation = BASE_LOCATION.resolve("../private/ms.xml");
-        masterSecret = Locations.loadMasterSecret(masterSecretLocation);
-        if (masterSecret == null) {
-            URI gp = BASE_ID.resolve("gp.xml");
-            masterSecret = Locations.generateMasterSecret(gp,
-                    masterSecretLocation);
-        }
     }
 
     /**
@@ -176,9 +162,8 @@ public class TestIssuanceCard extends TestCase {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
             recipient = new IdemixService(new TerminalCardService(terminal));
             recipient.open();
+            recipient.generateMasterSecret();
             recipient.setIssuanceSpecification(issuanceSpec);
-            // FIXME: This should go away eventually (secret generated on the card)
-            recipient.setMasterSecret(masterSecret);
             recipient.setAttributes(issuanceSpec, values);
         } catch (Exception e) {
             fail(e.getMessage()); 
