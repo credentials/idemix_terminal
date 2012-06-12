@@ -549,6 +549,22 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     }
 
     /**
+     * Send the pin to the card
+     *
+     * @throws CardServiceException if an error occurred.
+     */
+    public void sendPin(byte[] pin)
+    throws CardServiceException {
+        CommandAPDU command = new CommandAPDU(
+        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, 0x00, pin);
+        IResponseAPDU response = transmit(command);
+        if (response.getSW() != 0x00009000) {
+            throw new CardServiceException("Could not authorize using PIN.",
+                    response.getSW());
+        }
+    }
+    
+    /**
      * Set the attributes: 
      * 
      * <pre>

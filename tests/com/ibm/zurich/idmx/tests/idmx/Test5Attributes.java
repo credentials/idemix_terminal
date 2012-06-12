@@ -110,6 +110,11 @@ public class Test5Attributes extends TestCase {
     public final static String PROOF_VERIFIED = "Proof Verified." + ENDING;
 
     /**
+     * Default PIN of card.
+     */
+    private static final byte[] DEFAULT_PIN = {0x30, 0x30, 0x30, 0x30};
+    
+    /**
      * Setup of the test environment.
      */
     protected final void setUp() {
@@ -190,6 +195,7 @@ public class Test5Attributes extends TestCase {
             recipient = new IdemixService(new TerminalCardService(terminal));
             recipient.open();
             recipient.generateMasterSecret();
+            recipient.sendPin(DEFAULT_PIN);
             recipient.setIssuanceSpecification(issuanceSpec);
             recipient.setAttributes(issuanceSpec, values);
         } catch (Exception e) {
