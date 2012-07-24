@@ -609,7 +609,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         TreeMap<String, BigInteger> additionalValues = 
             new TreeMap<String, BigInteger>();
         BigInteger theNonce1 = msg.getIssuanceElement(
-                IssuanceProtocolValues.nonce_recipient);
+                IssuanceProtocolValues.nonce);
 
         // Hide CardServiceExceptions, instead return null on failure
         try {
@@ -663,7 +663,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
                 throw new CardServiceException("Could not issue nonce n2.", 
                         response_n2.getSW());
             }
-            issuanceProtocolValues.put(IssuanceProtocolValues.nonce_recipient, 
+            issuanceProtocolValues.put(IssuanceProtocolValues.nonce,
                     new BigInteger(1, response_n2.getData()));
 
             // Return the next protocol message
