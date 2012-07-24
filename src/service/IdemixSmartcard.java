@@ -449,7 +449,7 @@ public class IdemixSmartcard {
     public static ArrayList<ProtocolCommand> round1Commands(IssuanceSpec spec, final Message msg) {
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
         BigInteger theNonce1 = msg.getIssuanceElement(
-                IssuanceProtocolValues.nonce_recipient);
+                IssuanceProtocolValues.nonce);
         int L_Phi = spec.getPublicKey().getGroupParams().getSystemParams().getL_Phi();
     	commands.add(
     			new ProtocolCommand(
@@ -504,7 +504,7 @@ public class IdemixSmartcard {
         sValues.put(IssuanceSpec.MASTER_SECRET_NAME,
                 new SValue(new BigInteger(1, responses.get("proof_s_A").getData())));
         
-        issuanceProtocolValues.put(IssuanceProtocolValues.nonce_recipient, 
+        issuanceProtocolValues.put(IssuanceProtocolValues.nonce,
                 new BigInteger(1, responses.get("nonce_n2").getData()));
         
         // Return the next protocol message
