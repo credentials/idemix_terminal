@@ -20,6 +20,7 @@
 package service;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -228,6 +229,28 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     protected SystemParameters sysPars;
 
+    /**
+     * Inner class for collecting APDU commands.
+     *
+     */
+    public class ProtocolCommand {
+    	public String key;
+    	public CommandAPDU command;
+    	public String description;
+    	public HashMap<Integer,String> errorMap = null;
+    	public ProtocolCommand(String key, String description, CommandAPDU command) {
+    		this.key = key;
+    		this.description = description;
+    		this.command = command;
+    	}
+    	public ProtocolCommand(String key, String description, CommandAPDU command, HashMap<Integer,String> errorMap) {
+    		this.key = key;
+    		this.description = description;
+    		this.command = command;
+    		this.errorMap = errorMap;
+    	}
+    }
+    
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
     /**************************************************************************/
@@ -402,19 +425,22 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * @param spec the specification to be set.
      * @throws CardServiceException if an error occurred.
      */
-    public void setIssuanceSpecification(IssuanceSpec spec) 
-    throws CardServiceException {
+    public void setIssuanceSpecification(IssuanceSpec spec) throws CardServiceException {
+    	executeCommands(setIssuanceSpecificationCommands(spec));
+    }
+    
+    public ArrayList<ProtocolCommand> setIssuanceSpecificationCommands(IssuanceSpec spec) {
     	short id = 1; // FIXME: derive this id somehow
-    	
     	// Set the system parameters for this protocol run
     	sysPars = spec.getPublicKey().getGroupParams().getSystemParams();
-        
-        // Set the issuance context
-        startIssuance(id, spec.getContext());
-        
-    	// Set the issuer public key
-    	setPublicKey(spec.getPublicKey(), 
-        		spec.getCredentialStructure().getAttributeStructs().size() + 1);
+    	
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    	
+    	commands.add(startIssuanceCommand(id, spec.getContext()));
+    	
+    	commands.addAll(setPublicKeyCommands(spec.getPublicKey(),
+    			spec.getCredentialStructure().getAttributeStructs().size() + 1));
+    	return commands;
     }
     
     /**
@@ -427,101 +453,83 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * @param pubKey the public key to be set.
      * @throws CardServiceException if an error occurred.
      */
-    void setPublicKey(IssuerPublicKey pubKey, int pubKeyElements) 
-    throws CardServiceException {
-    	int l_n = sysPars.getL_n();
-        CommandAPDU command_n = new CommandAPDU(
-        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_N, 0x00, 0x00, 
-                fixLength(pubKey.getN(), l_n));
-        IResponseAPDU response_n = transmit(command_n);
-        if (response_n.getSW() != 0x00009000) {
-            if (response_n.getSW() == 0x00006D00) {
-                notSupported("Could not set public key.");
-            } else {
-                throw new CardServiceException("Could not set public key " +
-                        "modulus (n).", response_n.getSW());
-            }
-        }
-        
-        CommandAPDU command_z = new CommandAPDU(
-        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_Z, 0x00, 0x00, 
-                fixLength(pubKey.getCapZ(), l_n));
-        IResponseAPDU response_z = transmit(command_z);
-        if (response_z.getSW() != 0x00009000) {
-            if (response_z.getSW() == 0x00006D00) {
-                notSupported("Could not set public key.");
-            } else {
-                throw new CardServiceException("Could not set public key " +
-                        "element (Z).", response_z.getSW());
-            }
-        }
-        
-        CommandAPDU command_s = new CommandAPDU(
-        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_S, 0x00, 0x00, 
-        		fixLength(pubKey.getCapS(), l_n));
-        IResponseAPDU response_s = transmit(command_s);
-        if (response_s.getSW() != 0x00009000) {
-            if (response_s.getSW() == 0x00006D00) {
-                notSupported("Could not set public key.");
-            } else {
-                throw new CardServiceException("Could not set public key " +
-                        "modulus (n).", response_s.getSW());
-            }
-        }
-        
-        BigInteger[] pubKeyElement = pubKey.getCapR();
-        for (int i = 0; i < pubKeyElements; i++) {
-            CommandAPDU command = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_R, i, 0x00, 
-            		fixLength(pubKeyElement[i], l_n));
-            IResponseAPDU response = transmit(command);
-            if (response.getSW() != 0x00009000) {
-                if (response.getSW() == 0x00006D00) {
-                    notSupported("Could not set public key elements.");
-                } else {
-                    throw new CardServiceException("Could not set public key " +
-                            "element (R@index " + i + ").", response.getSW());
-                }
-            }
-        }
-    }
-
-    void startIssuance(short id, BigInteger context) 
-    throws CardServiceException {
-        CommandAPDU command = new CommandAPDU(
-        		CLA_IDEMIX, INS_ISSUE_CREDENTIAL, id >> 8, id & 0xff, 
-        		fixLength(context, sysPars.getL_H()));
-        IResponseAPDU response = transmit(command);
-        if (response.getSW() != 0x00009000) {
-            if (response.getSW() == 0x00006D00) {
-                notSupported("Could not start issuance.");
-            } else if (response.getSW() == 0x00006986) {
-            	throw new CardServiceException("Could not issue credential, already issued.");
-            } else {
-                throw new CardServiceException("Could not start issuance.", 
-                        response.getSW());
-            }
-        }
-    }
-
-    void startProof(short id, BigInteger context) 
-    throws CardServiceException {
-        CommandAPDU command = new CommandAPDU(
-        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff, 
-        		fixLength(context, sysPars.getL_H()));
-        IResponseAPDU response = transmit(command);
-        if (response.getSW() != 0x00009000) {
-            if (response.getSW() == 0x00006D00) {
-                notSupported("Could not start proving.");
-            } else if (response.getSW() == 0x00006A88) {
-            	throw new CardServiceException("Credential not found.");
-            } else {
-                throw new CardServiceException("Could not start proving.", 
-                        response.getSW());
-            }
-        }
-    }
     
+    private ArrayList<ProtocolCommand> setPublicKeyCommands(IssuerPublicKey pubKey, int pubKeyElements) {
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    	int l_n = sysPars.getL_n();
+    	commands.add(
+    			new ProtocolCommand(
+    					"publickey_n",
+    					"Set public key (n)",
+    					new CommandAPDU(
+    			        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_N, 0x00, 0x00, 
+    			                fixLength(pubKey.getN(), l_n))));
+    	
+    	commands.add(
+    			new ProtocolCommand(
+    					"publickey_z",
+    					"Set public key (Z)",
+    					new CommandAPDU(
+    			        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_Z, 0x00, 0x00, 
+    			                fixLength(pubKey.getCapZ(), l_n))));
+    	
+    	BigInteger[] pubKeyElement = pubKey.getCapR();
+    	for (int i = 0; i < pubKeyElements; i++) {
+        	commands.add(
+        			new ProtocolCommand(
+        					"publickey_element" + i, 
+        					"Set public key element (R@index " + i + ")",
+        					new CommandAPDU(
+        		            		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_R, i, 0x00, 
+        		            		fixLength(pubKeyElement[i], l_n))));
+    	}
+
+    	return commands;    	
+    }
+
+    
+    private ProtocolCommand startIssuanceCommand(short id, BigInteger context) {
+    	return
+    			new ProtocolCommand(
+    					"start_issuance", 
+    					"Start credential issuance.",
+    					new CommandAPDU(
+    			        		CLA_IDEMIX, INS_ISSUE_CREDENTIAL, id >> 8, id & 0xff, 
+    			        		fixLength(context, sysPars.getL_H())),
+    					new HashMap<Integer,String>() {{
+    						put(0x00006986,"Credential already issued.");
+    					}});
+    }
+
+//    void startProof(short id, BigInteger context) throws CardServiceException {
+//        CommandAPDU command = new CommandAPDU(
+//        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff, 
+//        		fixLength(context, sysPars.getL_H()));
+//        IResponseAPDU response = transmit(command);
+//        if (response.getSW() != 0x00009000) {
+//            if (response.getSW() == 0x00006D00) {
+//                notSupported("Could not start proving.");
+//            } else if (response.getSW() == 0x00006A88) {
+//            	throw new CardServiceException("Credential not found.");
+//            } else {
+//                throw new CardServiceException("Could not start proving.", 
+//                        response.getSW());
+//            }
+//        }
+//    }
+    
+    ProtocolCommand startProofCommand(short id, BigInteger context) {
+    	return
+    			new ProtocolCommand(
+    					"startprove", 
+    					"Start credential proof.", 
+    					new CommandAPDU(
+    			        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff, 
+    			        		fixLength(context, sysPars.getL_H())),
+    			        new HashMap<Integer,String>() {{
+    			        	put(0x00006A88,"Credential not found.");
+    			        }});
+    }
     /**
      * Generate the master secret: 
      * 
@@ -533,21 +541,22 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     public void generateMasterSecret() 
     throws CardServiceException {
-        CommandAPDU command = new CommandAPDU(
-        		CLA_IDEMIX, INS_GENERATE_SECRET, 0x00, 0x00);
-        IResponseAPDU response = transmit(command);
-        if (response.getSW() != 0x00009000) {
-            if (response.getSW() == 0x00006D00) {
-                notSupported("Could not generate master secret.");
-            } else if (response.getSW() == 0x00006986) {
-                System.err.println("Could not generate master secret, already set.");
-            } else {
-                throw new CardServiceException("Could not generate master secret.", 
-                        response.getSW());
-            }
-        }
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    	commands.add(generateMasterSecretCommand());
+    	executeCommands(commands);
     }
 
+    ProtocolCommand generateMasterSecretCommand() {
+    	return
+    			new ProtocolCommand(
+    					"generatesecret",
+    					"Generate master secret",
+    					new CommandAPDU(
+    			        		CLA_IDEMIX, INS_GENERATE_SECRET, 0x00, 0x00),
+    			        new HashMap<Integer,String>() {{
+    			        	put(0x00006986,"Master secret already set.");
+    			        }});
+    }
     /**
      * Send the pin to the card
      *
@@ -555,13 +564,17 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     public void sendPin(byte[] pin)
     throws CardServiceException {
-        CommandAPDU command = new CommandAPDU(
-        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, 0x00, pin);
-        IResponseAPDU response = transmit(command);
-        if (response.getSW() != 0x00009000) {
-            throw new CardServiceException("Could not authorize using PIN.",
-                    response.getSW());
-        }
+        executeCommands(singleCommand(sendPinCommand(pin)));
+    }
+    
+    public ProtocolCommand sendPinCommand(byte[] pin) {
+    	return
+    			new ProtocolCommand(
+    					"sendpin",
+    					"Authorize using PIN",
+    					new CommandAPDU(
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, 0x00, pin)
+    					);
     }
     
     /**
@@ -575,25 +588,26 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * @param values the attributes to be set.
      * @throws CardServiceException if an error occurred.
      */
-    public void setAttributes(IssuanceSpec spec, Values values) 
-    throws CardServiceException {
+    public void setAttributes(IssuanceSpec spec, Values values) throws CardServiceException {
+        executeCommands(setAttributesCommands(spec, values));
+    }
+    
+    ArrayList<ProtocolCommand> setAttributesCommands(IssuanceSpec spec, Values values) {
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
         Vector<AttributeStructure> structs = spec.getCredentialStructure().getAttributeStructs();
         int i = 1;
         for (AttributeStructure struct : structs) {
-            BigInteger attr = (BigInteger) values.get(struct.getName()).getContent();
-            CommandAPDU command = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_ATTRIBUTES, i++, 0x00, 
-                    fixLength(attr, sysPars.getL_m()));
-            IResponseAPDU response = transmit(command);
-            if (response.getSW() != 0x00009000) {
-                if (response.getSW() == 0x00006D00) {
-                    notSupported("Could not set attributes.");
-                } else {                
-                    throw new CardServiceException("Could not set attribute " +
-                    		"(m@index " + (i + 1) + ").", response.getSW());
-                }
-            }
+        	BigInteger attr = (BigInteger) values.get(struct.getName()).getContent();
+        	commands.add(
+        			new ProtocolCommand(
+        					"setattr"+i,
+        					"Set attribute (m@index" + i + ")",
+        					new CommandAPDU(
+        		            		CLA_IDEMIX, INS_ISSUE_ATTRIBUTES, i, 0x00, 
+        		                    fixLength(attr, sysPars.getL_m()))));
+        	i += 1;
         }
+    	return commands;
     }
     
     /**
@@ -603,81 +617,80 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      *         attributes sent to the Issuer.
      */
     public Message round1(final Message msg) {
-        HashMap<IssuanceProtocolValues, BigInteger> issuanceProtocolValues = 
-            new HashMap<IssuanceProtocolValues, BigInteger>();
-        HashMap<String, SValue> sValues = new HashMap<String, SValue>();
-        TreeMap<String, BigInteger> additionalValues = 
-            new TreeMap<String, BigInteger>();
-        BigInteger theNonce1 = msg.getIssuanceElement(
-                IssuanceProtocolValues.nonce_recipient);
-
-        // Hide CardServiceExceptions, instead return null on failure
         try {
-            // send Nonce and receive U 
-            CommandAPDU nonce_n1 = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_NONCE_1, 0x00, 0x00, 
-                    fixLength(theNonce1,sysPars.getL_Phi()));
-            IResponseAPDU response_n1 = transmit(nonce_n1);
-            if (response_n1.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue nonce n1.", 
-                        response_n1.getSW());
-            }
-            issuanceProtocolValues.put(IssuanceProtocolValues.capU, 
-                    new BigInteger(1, response_n1.getData()));        
-
-            // receive Proof
-            CommandAPDU proof_c = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_PROOF_U, P1_PROOF_U_C, 0x00);
-            IResponseAPDU response_c = transmit(proof_c);
-            if (response_c.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue proof c.", 
-                        response_c.getSW());
-            }
-            BigInteger challenge = new BigInteger(1, response_c.getData());
-
-            CommandAPDU proof_vHatPrime = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_PROOF_U, P1_PROOF_U_VPRIMEHAT, 0x00);
-            IResponseAPDU response_vHatPrime = transmit(proof_vHatPrime);
-            if (response_vHatPrime.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue proof v^'.", 
-                        response_vHatPrime.getSW());
-            }
-            additionalValues.put(IssuanceSpec.vHatPrime, 
-                    new BigInteger(1, response_vHatPrime.getData()));
-
-            CommandAPDU proof_s_A = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_PROOF_U, P1_PROOF_U_S_A, 0x00);
-            IResponseAPDU response_s_A = transmit(proof_s_A);
-            if (response_s_A.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue proof s_A.", 
-                        response_s_A.getSW());
-            }
-            sValues.put(IssuanceSpec.MASTER_SECRET_NAME,
-                    new SValue(new BigInteger(1, response_s_A.getData())));
-
-            // receive Nonce
-            CommandAPDU nonce_n2 = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_NONCE_2, 0x00, 0x00);
-            IResponseAPDU response_n2 = transmit(nonce_n2);
-            if (response_n2.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue nonce n2.", 
-                        response_n2.getSW());
-            }
-            issuanceProtocolValues.put(IssuanceProtocolValues.nonce_recipient, 
-                    new BigInteger(1, response_n2.getData()));
-
-            // Return the next protocol message
-            return new Message(issuanceProtocolValues, 
-                    new Proof(challenge, sValues, additionalValues));
-            
-        // Report caught exceptions
-        } catch (CardServiceException e) {
+			return processRound1Responses(executeCommands(round1Commands(msg)));
+		} catch (CardServiceException e) {
             System.err.println(e.getMessage() + "\n");
             e.printStackTrace();
             return null;
-        }
+		}
+    }
+    
+    public ArrayList<ProtocolCommand> round1Commands(final Message msg) {
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+        BigInteger theNonce1 = msg.getIssuanceElement(
+                IssuanceProtocolValues.nonce_recipient);
+    	commands.add(
+    			new ProtocolCommand(
+    					"nonce_n1",
+    					"Issue nonce n1",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_NONCE_1, 0x00, 0x00, 
+    		                    fixLength(theNonce1,sysPars.getL_Phi()))));
+    	commands.add(
+    			new ProtocolCommand(
+    					"proof_c",
+    					"Issue proof c",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_U, P1_PROOF_U_C, 0x00)));
+    	
+    	commands.add(
+    			new ProtocolCommand(
+    					"vHatPrime",
+    					"Issue proof v^'",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_U, P1_PROOF_U_VPRIMEHAT, 0x00)));
+    	commands.add(
+    			new ProtocolCommand(
+    					"proof_s_A",
+    					"Issue proof s_A",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_U, P1_PROOF_U_S_A, 0x00)));
+    	commands.add(
+    			new ProtocolCommand(
+    					"nonce_n2",
+    					"Issue nonce n2",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_NONCE_2, 0x00, 0x00)));
+    	return commands;
     }
 
+    public Message processRound1Responses(HashMap<String,IResponseAPDU> responses) {
+    	HashMap<IssuanceProtocolValues, BigInteger> issuanceProtocolValues = 
+                new HashMap<IssuanceProtocolValues, BigInteger>();
+        TreeMap<String, BigInteger> additionalValues = 
+                new TreeMap<String, BigInteger>();
+        HashMap<String, SValue> sValues = new HashMap<String, SValue>();
+    	
+    	issuanceProtocolValues.put(IssuanceProtocolValues.capU, 
+                new BigInteger(1, responses.get("nonce_n1").getData()));
+    	
+    	BigInteger challenge = new BigInteger(1, responses.get("proof_c").getData());
+    	
+        additionalValues.put(IssuanceSpec.vHatPrime, 
+                new BigInteger(1, responses.get("vHatPrime").getData()));
+        
+        sValues.put(IssuanceSpec.MASTER_SECRET_NAME,
+                new SValue(new BigInteger(1, responses.get("proof_s_A").getData())));
+        
+        issuanceProtocolValues.put(IssuanceProtocolValues.nonce_recipient, 
+                new BigInteger(1, responses.get("nonce_n2").getData()));
+        
+        // Return the next protocol message
+        return new Message(issuanceProtocolValues, 
+                new Proof(challenge, sValues, additionalValues));        
+    }
+    
     /**
      * Called with the second protocol flow as input, outputs the Credential.
      * This is the last step of the issuance protocol, where the Recipient
@@ -691,73 +704,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         // Hide CardServiceExceptions, instead return null on failure
         try {
             // send Signature
-            BigInteger A = msg.getIssuanceElement(IssuanceProtocolValues.capA);
-            CommandAPDU signature_A = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_A, 0x00, 
-                    fixLength(A, sysPars.getL_n()));
-            IResponseAPDU response_A = transmit(signature_A);
-            if (response_A.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue signature A.", 
-                        response_A.getSW());
-            }
-
-            BigInteger e = msg.getIssuanceElement(IssuanceProtocolValues.e);
-            CommandAPDU signature_e = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_E, 0x00, 
-                    fixLength(e, sysPars.getL_e()));
-            IResponseAPDU response_e = transmit(signature_e);
-            if (response_e.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue signature e.", 
-                        response_e.getSW());
-            }
-
-            BigInteger v = msg.getIssuanceElement(IssuanceProtocolValues.vPrimePrime);
-            CommandAPDU signature_v = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_V, 0x00, 
-                    fixLength(v, sysPars.getL_v()));
-            IResponseAPDU response_v = transmit(signature_v);
-            if (response_v.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue signature v''.", 
-                        response_v.getSW());
-            }
-
-            CommandAPDU signature_verify = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_VERIFY, 0x00);
-            IResponseAPDU response_verify = transmit(signature_verify);
-            if (response_verify.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not verify issued signature.", 
-                        response_verify.getSW());
-            }
-            
-            // send Proof 
-            BigInteger c = msg.getProof().getChallenge();
-            CommandAPDU proof_c = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_C, 0x00, 
-                    fixLength(c, sysPars.getL_H()));
-            IResponseAPDU response_c = transmit(proof_c);
-            if (response_c.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue proof c'.", 
-                        response_c.getSW());
-            }
-        
-            BigInteger s_e = 
-            		(BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
-            CommandAPDU proof_s_e = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_S_E, 0x00, 
-                    fixLength(s_e, sysPars.getL_n()));
-            IResponseAPDU response_s_e = transmit(proof_s_e);
-            if (response_s_e.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue proof s_e.", 
-                        response_s_e.getSW());
-            }
-
-            CommandAPDU proof_verify = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_VERIFY, 0x00);
-            IResponseAPDU response_proof = transmit(proof_verify);
-            if (response_proof.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not verify proof.", 
-                        response_verify.getSW());
-            }
+        	executeCommands(round3Commands(msg));
             
             // Do NOT return the generated Idemix credential
             return null;
@@ -770,6 +717,65 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
     }
 
+    public ArrayList<ProtocolCommand> round3Commands(final Message msg) {
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    	
+    	BigInteger A = msg.getIssuanceElement(IssuanceProtocolValues.capA);
+    	commands.add(
+    			new ProtocolCommand(
+    					"signature_A",
+    					"Issue signature A",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_A, 0x00, 
+    		                    fixLength(A, sysPars.getL_n()))));
+    	BigInteger e = msg.getIssuanceElement(IssuanceProtocolValues.e);
+    	commands.add(
+    			new ProtocolCommand(
+    					"signature_e",
+    					"Issue signature e",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_E, 0x00, 
+    		                    fixLength(e, sysPars.getL_e()))));
+    	BigInteger v = msg.getIssuanceElement(IssuanceProtocolValues.vPrimePrime);
+    	commands.add(
+    			new ProtocolCommand(
+    					"vPrimePrime",
+    					"Issue signature v''",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_V, 0x00, 
+    		                    fixLength(v, sysPars.getL_v()))));
+    	commands.add(
+    			new ProtocolCommand(
+    					"verify",
+    					"Verify issued signature",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_VERIFY, 0x00)));
+    	BigInteger c = msg.getProof().getChallenge();
+    	commands.add(
+    			new ProtocolCommand(
+    					"proof_c",
+    					"Issue proof c'",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_C, 0x00, 
+    		                    fixLength(c, sysPars.getL_H()))));
+    	BigInteger s_e = 
+        		(BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
+    	commands.add(
+    			new ProtocolCommand(
+    					"proof_s_e",
+    					"Issue proof s_e",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_S_E, 0x00, 
+    		                    fixLength(s_e, sysPars.getL_n()))));
+    	commands.add(
+    			new ProtocolCommand(
+    					"proof_verify",
+    					"Verify proof",
+    					new CommandAPDU(
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_VERIFY, 0x00)));
+    	return commands;
+    }
+    
     /**
      * Builds an Identity mixer show-proof data structure, which can be passed
      * to the verifier for verification.
@@ -777,15 +783,24 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      * @return Identity mixer show-proof data structure.
      */
     public Proof buildProof(final BigInteger nonce, final ProofSpec spec) {
-        HashMap<String, SValue> sValues = new HashMap<String, SValue>();
-        TreeMap<String, BigInteger> commonList = 
-            new TreeMap<String, BigInteger>();
-
+        // Hide CardServiceExceptions, instead return null on failure
+        try {            
+        	return processBuildProofResponses(executeCommands(buildProofCommands(nonce, spec)), spec);
+        // Report caught exceptions
+        } catch (CardServiceException e) {
+            System.err.println(e.getMessage() + "\n");
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    private ArrayList<ProtocolCommand> buildProofCommands(final BigInteger nonce, final ProofSpec spec) {
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
         // Set the system parameters for this protocol run
         sysPars = spec.getGroupParams().getSystemParams();
         
         List<Integer> disclosed = new Vector<Integer>();        
-    	short id = 1; // FIXME: derive this id somehow
+    	short id = 2; // FIXME: derive this id somehow
 
         Predicate predicate = spec.getPredicates().firstElement();
         if (predicate.getPredicateType() != PredicateType.CL) {
@@ -811,110 +826,101 @@ public class IdemixService extends CardService implements ProverInterface, Recip
             D[i] = disclosed.get(i).byteValue();
         }
 
-        // Hide CardServiceExceptions, instead return null on failure
-        try {
-            
-            // Set the context for this proof
-            startProof(id, spec.getContext());
-
-            // send the attribute disclosure selection
-            CommandAPDU disclosure_d = new CommandAPDU(
-            		CLA_IDEMIX, INS_PROVE_SELECTION, 0x00, 0x00, D);
-            IResponseAPDU response_d = transmit(disclosure_d);
-            if (response_d.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not set attribute " +
-                        "disclosure selection.", response_d.getSW());
-            }
-
-            // send and receive the challenge
-            CommandAPDU challenge_c = new CommandAPDU(
-            		CLA_IDEMIX, INS_PROVE_NONCE, 0x00, 0x00, 
-                    fixLength(nonce, sysPars.getL_Phi()));
-            IResponseAPDU response_c = transmit(challenge_c);
-            if (response_c.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not set the challenge " +
-                		"n1.", response_c.getSW());
-            }
-            BigInteger challenge = new BigInteger(1, response_c.getData());
-
-            // receive the randomised signature
-            CommandAPDU signature_A = new CommandAPDU(
-            		CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_A, 0x00);
-            IResponseAPDU response_A = transmit(signature_A);
-            if (response_A.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not get the random " +
-                		"signature A'.", response_A.getSW());
-            }
-            commonList.put(pred.getTempCredName(),
-            		new BigInteger(1, response_A.getData()));
-
-            CommandAPDU signature_e = new CommandAPDU(
-            		CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_E, 0x00);
-            IResponseAPDU response_e = transmit(signature_e);
-            if (response_e.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not get the random " +
-                		"signature e^.", response_e.getSW());
-            }
-            BigInteger e = new BigInteger(1, response_e.getData());
-
-            CommandAPDU signature_v = new CommandAPDU(
-            		CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_V, 0x00);
-            IResponseAPDU response_v = transmit(signature_v);
-            if (response_v.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not get the random " +
-                		"signature v^'.", response_v.getSW());
-            }
-            BigInteger v = new BigInteger(1, response_v.getData());
-
-            sValues.put(pred.getTempCredName(), new SValue(new SValuesProveCL(e, v)));
-
-            // receive the randomised master secret
-            CommandAPDU command = new CommandAPDU(
-            		CLA_IDEMIX, INS_PROVE_RESPONSE, 0x00, 0x00);
-            IResponseAPDU response = transmit(command);
-            if (response.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not get random " +
-                        "value (@index 0).", response.getSW());
-            }
-            BigInteger s = new BigInteger(1, response.getData());
-            sValues.put(IssuanceSpec.MASTER_SECRET_NAME, new SValue(s));
-
-            // iterate over all the identifiers
-            for (AttributeStructure attribute : cred.getAttributeStructs()) {
-                String attName = attribute.getName();
-                Identifier identifier = pred.getIdentifier(attName);
-                int i = attribute.getKeyIndex();
-                if (identifier.isRevealed()) {
-                    command = new CommandAPDU(
-                    		CLA_IDEMIX, INS_PROVE_ATTRIBUTE, i, 0x00);
-                    response = transmit(command);
-                    if (response.getSW() != 0x00009000) {
-                        throw new CardServiceException("Could not get disclosed " +
-                                "attribute (@index " + i + ").", response.getSW());
-                    }
-                    s = new BigInteger(1, response.getData());
-                } else {
-                    command = new CommandAPDU(
-                    		CLA_IDEMIX, INS_PROVE_RESPONSE, i, 0x00);
-                    response = transmit(command);
-                    if (response.getSW() != 0x00009000) {
-                        throw new CardServiceException("Could not get random " +
-                                "value (@index " + i + ").", response.getSW());
-                    }
-                    s = new BigInteger(1, response.getData());
-                }
-                // note that identifier names must be unique
-                sValues.put(identifier.getName(), new SValue(s));
-            }
-
-            // Return the generated proof, based on the proof specification
-            return new Proof(challenge, sValues, commonList);
+        commands.add(startProofCommand(id, spec.getContext()));
+        commands.add(
+        		new ProtocolCommand(
+        				"disclosure_d",
+        				"Attribute disclosure selection",
+        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SELECTION, 0x00, 0x00, D)));
+        commands.add(
+        		new ProtocolCommand(
+        				"challenge_c",
+        				"Send challenge n1",
+        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_NONCE, 0x00, 0x00, 
+        	                    fixLength(nonce, sysPars.getL_Phi()))));
+        commands.add(
+        		new ProtocolCommand(
+        				"signature_A",
+        				"Get random signature A",
+        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_A, 0x00)));
+        commands.add(
+        		new ProtocolCommand(
+        				"signature_e",
+        				"Get random signature e^",
+        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_E, 0x00)));
+        commands.add(
+        		new ProtocolCommand(
+        				"signature_v", 
+        				"Get random signature v^",
+            				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_V, 0x00)));
+        commands.add(
+        		new ProtocolCommand(
+        				"master", 
+        				"Get random value (@index 0).",
+        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_RESPONSE, 0x00, 0x00)));
+    	return commands;
+    }
+    
+    private Proof processBuildProofResponses(HashMap<String,IResponseAPDU> responses, final ProofSpec spec) {
+        HashMap<String, SValue> sValues = new HashMap<String, SValue>();
+        TreeMap<String, BigInteger> commonList = new TreeMap<String, BigInteger>();
         
-        // Report caught exceptions
-        } catch (CardServiceException e) {
-            System.err.println(e.getMessage() + "\n");
-            e.printStackTrace();
-            return null;
+        sysPars = spec.getGroupParams().getSystemParams();
+        
+        Predicate predicate = spec.getPredicates().firstElement();
+        if (predicate.getPredicateType() != PredicateType.CL) {
+            throw new RuntimeException("Unimplemented predicate.");
         }
+        CLPredicate pred = ((CLPredicate) predicate);
+        StructureStore store = StructureStore.getInstance();
+        CredentialStructure cred = (CredentialStructure) store.get(
+               pred.getCredStructLocation());
+
+
+        BigInteger challenge = new BigInteger(1, responses.get("challenge_c").getData());
+
+        commonList.put(pred.getTempCredName(),
+        				new BigInteger(1, responses.get("signature_A").getData()));             
+        
+        sValues.put(pred.getTempCredName(), 
+        		new SValue(
+        				new SValuesProveCL(
+        						new BigInteger(1, responses.get("signature_e").getData()), 
+        						new BigInteger(1, responses.get("signature_v").getData())
+        						)));
+
+        sValues.put(IssuanceSpec.MASTER_SECRET_NAME, 
+        		new SValue(new BigInteger(1, responses.get("master").getData())));
+                    
+        for (AttributeStructure attribute : cred.getAttributeStructs()) {
+        	String attName = attribute.getName();
+            Identifier identifier = pred.getIdentifier(attName);
+            sValues.put(identifier.getName(), 
+            		new SValue(new BigInteger(1, responses.get("attr_" + attName).getData())));
+        }
+        
+        // Return the generated proof, based on the proof specification
+        return new Proof(challenge, sValues, commonList);
+    }
+    
+    private HashMap<String,IResponseAPDU> executeCommands(List<ProtocolCommand> commands) throws CardServiceException {
+    	HashMap<String,IResponseAPDU> responses = new HashMap<String, IResponseAPDU>();
+        for (ProtocolCommand c: commands) {
+        	IResponseAPDU response = transmit(c.command);
+        	responses.put(c.key, response);
+        	if (response.getSW() != 0x00009000) {
+        		// don't bother with the rest of the commands...
+        		// TODO: get error message from global table
+        		String errorMessage = c.errorMap != null && c.errorMap.containsKey(response.getSW()) ? c.errorMap.get(response.getSW()) : "";
+        		throw new CardServiceException(String.format("Command failed: \"%s\", SW: %04x (%s)",c.description, response.getSW(), errorMessage ));
+        	}
+        }
+    	return responses;
+    }
+    
+    private ArrayList<ProtocolCommand> singleCommand(ProtocolCommand command) {
+    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    	commands.add(command);
+    	return commands;
     }
 }
