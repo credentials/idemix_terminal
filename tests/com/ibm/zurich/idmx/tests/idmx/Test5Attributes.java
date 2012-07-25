@@ -326,6 +326,14 @@ public class Test5Attributes extends TestCase {
         HashMap<String, BigInteger> revealedValues = verifier
                 .getRevealedValues();
         outputRevealedValues(revealedValues);
+
+        // Rename the old proof descriptions, hence we can inspect them
+        // but they won't confuse subsequent test runs.
+        File proof_loc = new File(BASE_LOCATION.resolve(getProofLocation(CL_CARD)));
+        File nonce_loc = new File(BASE_LOCATION.resolve(getNonceLocation(CL_CARD)));
+
+        proof_loc.renameTo(new File(proof_loc.getPath() + ".old"));
+        nonce_loc.renameTo(new File(nonce_loc.getPath() + ".old"));
     }
 
     /**
