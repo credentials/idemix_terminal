@@ -229,27 +229,7 @@ public class IdemixService extends CardService implements ProverInterface, Recip
      */
     protected SystemParameters sysPars;
 
-    /**
-     * Inner class for collecting APDU commands.
-     *
-     */
-    public class ProtocolCommand {
-    	public String key;
-    	public CommandAPDU command;
-    	public String description;
-    	public HashMap<Integer,String> errorMap = null;
-    	public ProtocolCommand(String key, String description, CommandAPDU command) {
-    		this.key = key;
-    		this.description = description;
-    		this.command = command;
-    	}
-    	public ProtocolCommand(String key, String description, CommandAPDU command, HashMap<Integer,String> errorMap) {
-    		this.key = key;
-    		this.description = description;
-    		this.command = command;
-    		this.errorMap = errorMap;
-    	}
-    }
+    
     
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
