@@ -858,6 +858,29 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         				"master", 
         				"Get random value (@index 0).",
         				new CommandAPDU(CLA_IDEMIX, INS_PROVE_RESPONSE, 0x00, 0x00)));
+        
+        // iterate over all the identifiers
+        for (AttributeStructure attribute : cred.getAttributeStructs()) {
+        	
+            String attName = attribute.getName();
+            Identifier identifier = pred.getIdentifier(attName);
+            int i = attribute.getKeyIndex();
+            if (identifier.isRevealed()) {
+            	commands.add(
+                		new ProtocolCommand(
+                				"attr_"+attName,
+                				"Get disclosed attribute (@index " + i + ")",
+                				new CommandAPDU(CLA_IDEMIX, INS_PROVE_ATTRIBUTE, i, 0x00)));
+
+            } else {
+            	commands.add(
+                		new ProtocolCommand(
+                				"attr_"+attName, 
+                				"Get random value (@index " + i + ").",
+                				new CommandAPDU(CLA_IDEMIX, INS_PROVE_RESPONSE, i, 0x00)));
+            }
+
+        }        
     	return commands;
     }
     
