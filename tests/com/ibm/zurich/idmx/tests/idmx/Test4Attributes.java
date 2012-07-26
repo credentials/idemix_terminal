@@ -10,9 +10,11 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
 
+import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import service.IdemixService;
@@ -188,15 +190,25 @@ public class Test4Attributes extends TestCase {
         // run the issuance protocol.
         Issuer issuer = new Issuer(issuerKey, issuanceSpec, null, null, values);
 
+        CardTerminal terminal = null;
+        CardService cardService = null;
+		try {
+			terminal = TerminalFactory.getDefault().terminals().list().get(0);
+			cardService = new TerminalCardService(terminal);
+		} catch (CardException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
         IdemixService recipient = null;
         try {
-            CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
-            recipient = new IdemixService(new TerminalCardService(terminal));
-            recipient.open();
-            recipient.generateMasterSecret();
-            recipient.sendPin(DEFAULT_PIN);
-            recipient.setIssuanceSpecification(issuanceSpec);
-            recipient.setAttributes(issuanceSpec, values);
+            short id = 1;
+            recipient = new IdemixService();
+            recipient.open(cardService);
+            recipient.generateMasterSecret(cardService);
+            recipient.sendPin(cardService, DEFAULT_PIN);
+            recipient.setIssuanceSpecification(cardService, issuanceSpec, id);
+            recipient.setAttributes(cardService, issuanceSpec, values);
         } catch (Exception e) {
             fail(e.getMessage()); 
             e.printStackTrace();            
@@ -207,7 +219,7 @@ public class Test4Attributes extends TestCase {
             fail("round0");
         }
 
-        Message msgToIssuer1 = recipient.round1(msgToRecipient1);
+        Message msgToIssuer1 = recipient.round1(cardService, issuanceSpec, msgToRecipient1);
         if (msgToIssuer1 == null) {
             fail("round1");
         }
@@ -217,7 +229,7 @@ public class Test4Attributes extends TestCase {
             fail("round2");
         }
 
-        recipient.round3(msgToRecipient2);
+        recipient.round3(cardService, issuanceSpec, msgToRecipient2);
     }
 
     private static final void loadCredStruct(String credStructName) {
@@ -279,17 +291,19 @@ public class Test4Attributes extends TestCase {
         BigInteger nonce = Verifier.getNonce(sp);
 
         IdemixService prover = null;
+        CardService service = null;
         try {
-            CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
-            prover = new IdemixService(new TerminalCardService(terminal));
-            prover.open();
+            CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);
+            service = new TerminalCardService(terminal);
+            prover = new IdemixService();
+            service.open();
         } catch (Exception e) {
             fail(e.getMessage()); 
             e.printStackTrace();            
         }
 
         // create the proof
-        Proof p = prover.buildProof(nonce, spec);
+        Proof p = prover.buildProof(service, nonce, spec);
         System.out.println("Proof Created.");
 
         serializeElements(CL_CARD, p, nonce);
