@@ -251,7 +251,7 @@ public class IdemixService {
      * @return ResponseAPDU the response from the smart card.
      * @throws CardServiceException if some error occurred while transmitting.
      */
-    public IResponseAPDU transmit(CardService service, ICommandAPDU capdu) 
+    public static IResponseAPDU transmit(CardService service, ICommandAPDU capdu) 
     throws CardServiceException { 
 
         if (VERBOSE) {
@@ -285,7 +285,7 @@ public class IdemixService {
      * 
      * @throws CardServiceException if an error occurred.
      */
-    public void selectApplet(CardService service) 
+    public static void selectApplet(CardService service) 
     throws CardServiceException {
         CommandAPDU select = new CommandAPDU(ISO7816.CLA_ISO7816,  
                 INS_SELECT, P1_SELECT, 0x00, AID, 256); // LE == 0 is required.
@@ -383,11 +383,11 @@ public class IdemixService {
      * @param spec the specification to be set.
      * @throws CardServiceException if an error occurred.
      */
-    public void setIssuanceSpecification(CardService service, IssuanceSpec spec, short id) throws CardServiceException {
+    public static void setIssuanceSpecification(CardService service, IssuanceSpec spec, short id) throws CardServiceException {
     	executeCommands(service, setIssuanceSpecificationCommands(spec, id));
     }
     
-    public ArrayList<ProtocolCommand> setIssuanceSpecificationCommands(IssuanceSpec spec, short id) {
+    public static ArrayList<ProtocolCommand> setIssuanceSpecificationCommands(IssuanceSpec spec, short id) {
     	
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
     	
@@ -408,7 +408,7 @@ public class IdemixService {
      * @throws CardServiceException if an error occurred.
      */
     
-    private ArrayList<ProtocolCommand> setPublicKeyCommands(IssuanceSpec spec) {
+    public static ArrayList<ProtocolCommand> setPublicKeyCommands(IssuanceSpec spec) {
     	IssuerPublicKey pubKey = spec.getPublicKey();
     	int pubKeyElements = spec.getCredentialStructure().getAttributeStructs().size() + 1;
     	int l_n = spec.getPublicKey().getGroupParams().getSystemParams().getL_n();
@@ -445,7 +445,7 @@ public class IdemixService {
     }
 
     
-    private ProtocolCommand startIssuanceCommand(IssuanceSpec spec, short id) {
+    public static ProtocolCommand startIssuanceCommand(IssuanceSpec spec, short id) {
     	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
     	return
     			new ProtocolCommand(
@@ -460,7 +460,7 @@ public class IdemixService {
     }
 
     
-    ProtocolCommand startProofCommand(ProofSpec spec, short id) {
+    public static ProtocolCommand startProofCommand(ProofSpec spec, short id) {
     	int l_H = spec.getGroupParams().getSystemParams().getL_H();
     	
     	return
@@ -483,14 +483,14 @@ public class IdemixService {
      * 
      * @throws CardServiceException if an error occurred.
      */
-    public void generateMasterSecret(CardService service) 
+    public static void generateMasterSecret(CardService service) 
     throws CardServiceException {
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
     	commands.add(generateMasterSecretCommand());
     	executeCommands(service, commands);
     }
 
-    ProtocolCommand generateMasterSecretCommand() {
+    public static ProtocolCommand generateMasterSecretCommand() {
     	return
     			new ProtocolCommand(
     					"generatesecret",
@@ -506,12 +506,12 @@ public class IdemixService {
      *
      * @throws CardServiceException if an error occurred.
      */
-    public void sendPin(CardService service, byte[] pin)
+    public static void sendPin(CardService service, byte[] pin)
     throws CardServiceException {
         executeCommands(service, singleCommand(sendPinCommand(pin)));
     }
     
-    public ProtocolCommand sendPinCommand(byte[] pin) {
+    public static ProtocolCommand sendPinCommand(byte[] pin) {
     	return
     			new ProtocolCommand(
     					"sendpin",
@@ -532,11 +532,11 @@ public class IdemixService {
      * @param values the attributes to be set.
      * @throws CardServiceException if an error occurred.
      */
-    public void setAttributes(CardService service, IssuanceSpec spec, Values values) throws CardServiceException {
+    public static void setAttributes(CardService service, IssuanceSpec spec, Values values) throws CardServiceException {
         executeCommands(service, setAttributesCommands(spec, values));
     }
     
-    ArrayList<ProtocolCommand> setAttributesCommands(IssuanceSpec spec, Values values) {
+    public static ArrayList<ProtocolCommand> setAttributesCommands(IssuanceSpec spec, Values values) {
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
         Vector<AttributeStructure> structs = spec.getCredentialStructure().getAttributeStructs();
         int L_m = spec.getPublicKey().getGroupParams().getSystemParams().getL_m();
@@ -561,7 +561,7 @@ public class IdemixService {
      * @return Message containing the proof about the hidden and committed
      *         attributes sent to the Issuer.
      */
-    public Message round1(CardService service, IssuanceSpec spec, final Message msg) {
+    public static Message round1(CardService service, IssuanceSpec spec, final Message msg) {
         try {
 			return processRound1Responses(executeCommands(service, round1Commands(spec, msg)));
 		} catch (CardServiceException e) {
@@ -571,7 +571,7 @@ public class IdemixService {
 		}
     }
     
-    public ArrayList<ProtocolCommand> round1Commands(IssuanceSpec spec, final Message msg) {
+    public static ArrayList<ProtocolCommand> round1Commands(IssuanceSpec spec, final Message msg) {
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
         BigInteger theNonce1 = msg.getIssuanceElement(
                 IssuanceProtocolValues.nonce_recipient);
@@ -611,7 +611,7 @@ public class IdemixService {
     	return commands;
     }
 
-    public Message processRound1Responses(HashMap<String,IResponseAPDU> responses) {
+    public static Message processRound1Responses(HashMap<String,IResponseAPDU> responses) {
     	HashMap<IssuanceProtocolValues, BigInteger> issuanceProtocolValues = 
                 new HashMap<IssuanceProtocolValues, BigInteger>();
         TreeMap<String, BigInteger> additionalValues = 
@@ -646,7 +646,7 @@ public class IdemixService {
      *            the second flow of the protocol, a message from the Issuer
      * @return the Credential, if it's valid, null otherwise.
      */
-    public Credential round3(CardService service, IssuanceSpec spec, final Message msg) {
+    public static Credential round3(CardService service, IssuanceSpec spec, final Message msg) {
         // Hide CardServiceExceptions, instead return null on failure
         try {
             // send Signature
@@ -663,7 +663,7 @@ public class IdemixService {
         }
     }
 
-    public ArrayList<ProtocolCommand> round3Commands(IssuanceSpec spec, final Message msg) {
+    public static ArrayList<ProtocolCommand> round3Commands(IssuanceSpec spec, final Message msg) {
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
     	SystemParameters sysPars = spec.getPublicKey().getGroupParams().getSystemParams();
     	
@@ -729,7 +729,7 @@ public class IdemixService {
      * 
      * @return Identity mixer show-proof data structure.
      */
-    public Proof buildProof(CardService service, final BigInteger nonce, final ProofSpec spec) {
+    public static Proof buildProof(CardService service, final BigInteger nonce, final ProofSpec spec) {
         // Hide CardServiceExceptions, instead return null on failure
         try {            
         	return processBuildProofResponses(executeCommands(service, buildProofCommands(nonce, spec)), spec);
@@ -741,7 +741,7 @@ public class IdemixService {
         }
     }
     
-    private ArrayList<ProtocolCommand> buildProofCommands(final BigInteger nonce, final ProofSpec spec) {
+    public static ArrayList<ProtocolCommand> buildProofCommands(final BigInteger nonce, final ProofSpec spec) {
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
         // Set the system parameters for this protocol run
         
@@ -832,7 +832,7 @@ public class IdemixService {
     	return commands;
     }
     
-    private Proof processBuildProofResponses(HashMap<String,IResponseAPDU> responses, final ProofSpec spec) {
+    public static Proof processBuildProofResponses(HashMap<String,IResponseAPDU> responses, final ProofSpec spec) {
         HashMap<String, SValue> sValues = new HashMap<String, SValue>();
         TreeMap<String, BigInteger> commonList = new TreeMap<String, BigInteger>();
         
@@ -872,7 +872,7 @@ public class IdemixService {
         return new Proof(challenge, sValues, commonList);
     }
     
-    private HashMap<String,IResponseAPDU> executeCommands(CardService service, List<ProtocolCommand> commands) throws CardServiceException {
+    public static HashMap<String,IResponseAPDU> executeCommands(CardService service, List<ProtocolCommand> commands) throws CardServiceException {
     	HashMap<String,IResponseAPDU> responses = new HashMap<String, IResponseAPDU>();
         for (ProtocolCommand c: commands) {
         	IResponseAPDU response = transmit(service, c.command);
@@ -887,7 +887,7 @@ public class IdemixService {
     	return responses;
     }
     
-    private ArrayList<ProtocolCommand> singleCommand(ProtocolCommand command) {
+    public static ArrayList<ProtocolCommand> singleCommand(ProtocolCommand command) {
     	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
     	commands.add(command);
     	return commands;
