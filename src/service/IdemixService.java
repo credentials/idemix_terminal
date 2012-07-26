@@ -317,7 +317,6 @@ public class IdemixService extends CardService implements ProverInterface, Recip
         }
     }
 
-
     /**
      * Report about commands not supported by the smart card. 
      */
@@ -481,22 +480,6 @@ public class IdemixService extends CardService implements ProverInterface, Recip
     					}});
     }
 
-//    void startProof(short id, BigInteger context) throws CardServiceException {
-//        CommandAPDU command = new CommandAPDU(
-//        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff, 
-//        		fixLength(context, sysPars.getL_H()));
-//        IResponseAPDU response = transmit(command);
-//        if (response.getSW() != 0x00009000) {
-//            if (response.getSW() == 0x00006D00) {
-//                notSupported("Could not start proving.");
-//            } else if (response.getSW() == 0x00006A88) {
-//            	throw new CardServiceException("Credential not found.");
-//            } else {
-//                throw new CardServiceException("Could not start proving.", 
-//                        response.getSW());
-//            }
-//        }
-//    }
     
     ProtocolCommand startProofCommand(short id, BigInteger context) {
     	return
