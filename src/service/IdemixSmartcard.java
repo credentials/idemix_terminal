@@ -333,6 +333,14 @@ public class IdemixSmartcard {
     			        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_Z, 0x00, 0x00, 
     			                fixLength(pubKey.getCapZ(), l_n))));
     	
+    	commands.add(
+    			new ProtocolCommand(
+    					"publickey_s",
+    					"Set public key (S)",
+    					new CommandAPDU(
+    							CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_S, 0x00, 0x00,
+    							fixLength(pubKey.getCapS(), l_n))));
+
     	BigInteger[] pubKeyElement = pubKey.getCapR();
     	for (int i = 0; i < pubKeyElements; i++) {
         	commands.add(
