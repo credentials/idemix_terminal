@@ -100,11 +100,23 @@ public class IdemixService implements ProverInterface, RecipientInterface {
 
     /**
      * Close the communication channel with the Idemix applet.
+     * TODO: WL: why is CardService a parameter here while it
+     * is a class member?
      */
+    @Deprecated
     public void close(CardService service) {
         if (service != null) {
             service.close();
         }
+    }
+    
+    /**
+     * Close the communication channel with the Idemix applet.
+     */
+    public void close() {
+    	if (service != null) {
+    		service.close();
+    	}
     }
     
     /**
