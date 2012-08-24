@@ -140,6 +140,17 @@ public class IdemixService implements ProverInterface, RecipientInterface {
     }
     
     /**
+	 * Update the pin on the card
+	 *
+	 * Note that to use this function one first needs to establish an
+	 * authenticated connection to the card.
+	 */
+    public void updatePin(byte[] pin)
+    throws CardServiceException {
+    	executeCommands(IdemixSmartcard.singleCommand(IdemixSmartcard.updatePinCommand(pin)));
+    }
+
+    /**
      * Generate the master secret: 
      * 
      * <pre>

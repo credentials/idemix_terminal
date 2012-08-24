@@ -422,6 +422,16 @@ public class IdemixSmartcard {
     			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, 0x00, pin)
     					);
     }
+
+	public static ProtocolCommand updatePinCommand(byte[] pin) {
+    	return
+    			new ProtocolCommand(
+    					"updatepin",
+    					"Update current PIN",
+    					new CommandAPDU(
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_CHANGE_CHV, 0x00, 0x00, pin)
+    					);
+	}
     
     /**
      * Get the APDU commands for setting the attributes:
