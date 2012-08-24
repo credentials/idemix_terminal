@@ -13,6 +13,7 @@ import java.util.Iterator;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import service.IdemixService;
@@ -194,7 +195,14 @@ public class Test5Attributes extends TestCase {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
             recipient = new IdemixService(new TerminalCardService(terminal), (short)4);
             recipient.open();
-            recipient.generateMasterSecret();
+
+            try {
+            	recipient.generateMasterSecret();
+            } catch (CardServiceException e) {
+            	System.out.println("Could not set master secret again, ignoring.");
+            	e.printStackTrace();
+            }
+
             recipient.sendPin(DEFAULT_PIN);
             recipient.setIssuanceSpecification(issuanceSpec);
             recipient.setAttributes(issuanceSpec, values);
