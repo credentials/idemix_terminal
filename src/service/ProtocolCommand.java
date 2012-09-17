@@ -1,34 +1,62 @@
 package service;
 
-import java.util.HashMap;
+import java.util.Map;
 
-import net.sourceforge.scuba.smartcards.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
 
 /**
- * Simple datastructure for storing APDU commands for smartcards
+ * Simple data structure for storing APDU commands for smart cards
  * together with meta data.
- * @author maarten
- *
+ * 
+ * @author Maarten Everts
  */
 public class ProtocolCommand {
+	
+	/**
+	 * A short string used to uniquely identify this command. 
+	 */
 	public String key;
-	public String description;	
-	public CommandAPDU command;
+	
+	/**
+	 * A brief description of the command.
+	 */
+	public String description;
+	
+	/**
+	 * The actual command APDU to be send to the smart card.
+	 */
+	public ICommandAPDU command;
 
 	/**
-	 * The errorMap maps smartcard status bytes to error strings, can be null.
+	 * A map to translate smart card status bytes to error strings, can be null.
 	 */
-	public HashMap<Integer,String> errorMap = null;
+	public Map<Integer,String> errorMap = null;
 	
-	public ProtocolCommand(String key, String description, CommandAPDU command) {
+	/**
+	 * Construct a new ProtocolCommand.
+	 * 
+	 * @param key used to identify this command.
+	 * @param description of the command.
+	 * @param apdu to be send to the smart card.
+	 */
+	public ProtocolCommand(String key, String description, ICommandAPDU apdu) {
 		this.key = key;
 		this.description = description;
-		this.command = command;
+		this.command = apdu;
 	}
-	public ProtocolCommand(String key, String description, CommandAPDU command, HashMap<Integer,String> errorMap) {
+	
+	/**
+	 * Construct a new ProtocolCommand.
+	 * 
+	 * @param key used to identify this command.
+	 * @param description of this command.
+	 * @param apdu to be send to the smart card.
+	 * @param error mapping from status bytes to error strings.
+	 */
+	public ProtocolCommand(String key, String description, ICommandAPDU apdu, Map<Integer,String> error) {
 		this.key = key;
 		this.description = description;
-		this.command = command;
-		this.errorMap = errorMap;
+		this.command = apdu;
+		this.errorMap = error;
 	}
 }
