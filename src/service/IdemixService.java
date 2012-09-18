@@ -242,21 +242,6 @@ implements ProverInterface, RecipientInterface {
         	ProtocolResponses responses = execute(commands);
 			return IdemixSmartcard.processRound1Responses(responses);
 
-            // receive Nonce
-            CommandAPDU nonce_n2 = new CommandAPDU(
-            		CLA_IDEMIX, INS_ISSUE_NONCE_2, 0x00, 0x00);
-            IResponseAPDU response_n2 = transmit(nonce_n2);
-            if (response_n2.getSW() != 0x00009000) {
-                throw new CardServiceException("Could not issue nonce n2.", 
-                        response_n2.getSW());
-            }
-            issuanceProtocolValues.put(IssuanceProtocolValues.nonce,
-                    new BigInteger(1, response_n2.getData()));
-
-            // Return the next protocol message
-            return new Message(issuanceProtocolValues, 
-                    new Proof(challenge, sValues, additionalValues));
-            
         // Report caught exceptions
         } catch (CardServiceException e) {
             System.err.println(e.getMessage() + "\n");
