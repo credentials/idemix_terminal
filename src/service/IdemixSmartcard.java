@@ -1,5 +1,5 @@
 /**
- * IdemixService.java
+ * IdemixSmartcard.java
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 package service;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +28,6 @@ import java.util.TreeMap;
 import java.util.Vector;
 
 import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 
 import com.ibm.zurich.idmx.dm.Values;
@@ -58,11 +56,7 @@ import com.ibm.zurich.idmx.utils.SystemParameters;
  *          $LastChangedDate: 2011-04-28 16:31:47 +0200 (Thu, 28 Apr 2011) $
  */
 public class IdemixSmartcard {
-    /**
-     * Universal version identifier to match versions during deserialisation.
-     */
-    private static final long serialVersionUID = -6317383635196413L;
-
+	
     /**
      * AID of the Idemix applet: ASCII encoding of "idemix".
      */
@@ -294,8 +288,8 @@ public class IdemixSmartcard {
      * @param id
      * @return
      */
-    public static ArrayList<ProtocolCommand> setIssuanceSpecificationCommands(IssuanceSpec spec, short id) {
-    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    public static ProtocolCommands setIssuanceSpecificationCommands(IssuanceSpec spec, short id) {
+    	ProtocolCommands commands = new ProtocolCommands();
     	
     	commands.add(startIssuanceCommand(spec, id));
     	
@@ -313,10 +307,10 @@ public class IdemixSmartcard {
      * @param spec Issuance spec to get the public key from.
      * @return
      */
-    public static ArrayList<ProtocolCommand> setPublicKeyCommands(IssuerPublicKey pubKey, int pubKeyElements) {
+    public static ProtocolCommands setPublicKeyCommands(IssuerPublicKey pubKey, int pubKeyElements) {
     	int l_n = pubKey.getGroupParams().getSystemParams().getL_n();
 
-    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    	ProtocolCommands commands = new ProtocolCommands();
     	commands.add(
     			new ProtocolCommand(
     					"publickey_n",
@@ -365,16 +359,15 @@ public class IdemixSmartcard {
      */
     public static ProtocolCommand startIssuanceCommand(IssuanceSpec spec, short id) {
     	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
-    	return
-    			new ProtocolCommand(
+    	
+    	return new ProtocolCommand(
     					"start_issuance", 
     					"Start credential issuance.",
     					new CommandAPDU(
     			        		CLA_IDEMIX, INS_ISSUE_CREDENTIAL, id >> 8, id & 0xff, 
     			        		fixLength(spec.getContext(), l_H)),
-    					new HashMap<Integer,String>() {{
-    						put(0x00006986,"Credential already issued.");
-    					}});
+    			        new ProtocolErrors(
+    			        		0x00006986,"Credential already issued."));
     }
 
     /**
@@ -394,9 +387,8 @@ public class IdemixSmartcard {
     					new CommandAPDU(
     			        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff, 
     			        		fixLength(spec.getContext(), l_H)),
-    			        new HashMap<Integer,String>() {{
-    			        	put(0x00006A88,"Credential not found.");
-    			        }});
+    			        new ProtocolErrors(
+    			        		0x00006A88,"Credential not found."));
     }
 
 
@@ -407,9 +399,8 @@ public class IdemixSmartcard {
     					"Generate master secret",
     					new CommandAPDU(
     			        		CLA_IDEMIX, INS_GENERATE_SECRET, 0x00, 0x00),
-    			        new HashMap<Integer,String>() {{
-    			        	put(0x00006986,"Master secret already set.");
-    			        }});
+    			        new ProtocolErrors(
+    			        		0x00006986,"Master secret already set."));
     
 
     
@@ -444,8 +435,8 @@ public class IdemixSmartcard {
      * @param values the attributes to be set.
      * @return
      */
-    public static ArrayList<ProtocolCommand> setAttributesCommands(IssuanceSpec spec, Values values) {
-    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    public static ProtocolCommands setAttributesCommands(IssuanceSpec spec, Values values) {
+    	ProtocolCommands commands = new ProtocolCommands();
         Vector<AttributeStructure> structs = spec.getCredentialStructure().getAttributeStructs();
         int L_m = spec.getPublicKey().getGroupParams().getSystemParams().getL_m();
         int i = 1;
@@ -464,8 +455,8 @@ public class IdemixSmartcard {
     }
     
     
-    public static ArrayList<ProtocolCommand> round1Commands(IssuanceSpec spec, final Message msg) {
-    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    public static ProtocolCommands round1Commands(IssuanceSpec spec, final Message msg) {
+    	ProtocolCommands commands = new ProtocolCommands();
         BigInteger theNonce1 = msg.getIssuanceElement(
                 IssuanceProtocolValues.nonce);
         int L_Phi = spec.getPublicKey().getGroupParams().getSystemParams().getL_Phi();
@@ -504,7 +495,7 @@ public class IdemixSmartcard {
     	return commands;
     }
 
-    public static Message processRound1Responses(HashMap<String,IResponseAPDU> responses) {
+    public static Message processRound1Responses(ProtocolResponses responses) {
     	HashMap<IssuanceProtocolValues, BigInteger> issuanceProtocolValues = 
                 new HashMap<IssuanceProtocolValues, BigInteger>();
         TreeMap<String, BigInteger> additionalValues = 
@@ -531,8 +522,8 @@ public class IdemixSmartcard {
     }
     
 
-    public static ArrayList<ProtocolCommand> round3Commands(IssuanceSpec spec, final Message msg) {
-    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    public static ProtocolCommands round3Commands(IssuanceSpec spec, final Message msg) {
+    	ProtocolCommands commands = new ProtocolCommands();
     	SystemParameters sysPars = spec.getPublicKey().getGroupParams().getSystemParams();
     	
     	BigInteger A = msg.getIssuanceElement(IssuanceProtocolValues.capA);
@@ -593,8 +584,8 @@ public class IdemixSmartcard {
     
 
     
-    public static ArrayList<ProtocolCommand> buildProofCommands(final BigInteger nonce, final ProofSpec spec, short id) {
-    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
+    public static ProtocolCommands buildProofCommands(final BigInteger nonce, final ProofSpec spec, short id) {
+    	ProtocolCommands commands = new ProtocolCommands();
         // Set the system parameters 
     	SystemParameters sysPars = spec.getGroupParams().getSystemParams();
     	
@@ -683,7 +674,7 @@ public class IdemixSmartcard {
     	return commands;
     }
     
-    public static Proof processBuildProofResponses(HashMap<String,IResponseAPDU> responses, final ProofSpec spec) {
+    public static Proof processBuildProofResponses(ProtocolResponses responses, final ProofSpec spec) {
         HashMap<String, SValue> sValues = new HashMap<String, SValue>();
         TreeMap<String, BigInteger> commonList = new TreeMap<String, BigInteger>();
         
@@ -722,12 +713,4 @@ public class IdemixSmartcard {
         // Return the generated proof, based on the proof specification
         return new Proof(challenge, sValues, commonList);
     }
-    
-    public static ArrayList<ProtocolCommand> singleCommand(ProtocolCommand command) {
-    	ArrayList<ProtocolCommand> commands = new ArrayList<ProtocolCommand>();
-    	commands.add(command);
-    	return commands;
-    }  
-    
-
 }

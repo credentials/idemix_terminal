@@ -1,36 +1,54 @@
-package service;
+/**
+ * ProtocolCommand.java
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright (C) Pim Vullers, Radboud University Nijmegen, September 2012.
+ */
 
-import java.util.Map;
+package service;
 
 import net.sourceforge.scuba.smartcards.ICommandAPDU;
 
 /**
- * Simple data structure for storing APDU commands for smart cards
- * together with meta data.
+ * Simple data structure for storing APDU commands for smart cards together 
+ * with some meta data.
  * 
  * @author Maarten Everts
+ * @author Pim Vullers
  */
 public class ProtocolCommand {
 	
 	/**
 	 * A short string used to uniquely identify this command. 
 	 */
-	public String key;
+	private String key;
 	
 	/**
 	 * A brief description of the command.
 	 */
-	public String description;
+	private String description;
 	
 	/**
 	 * The actual command APDU to be send to the smart card.
 	 */
-	public ICommandAPDU command;
+	private ICommandAPDU apdu;
 
 	/**
 	 * A map to translate smart card status bytes to error strings, can be null.
 	 */
-	public Map<Integer,String> errorMap = null;
+	private ProtocolErrors error = null;
 	
 	/**
 	 * Construct a new ProtocolCommand.
@@ -42,7 +60,7 @@ public class ProtocolCommand {
 	public ProtocolCommand(String key, String description, ICommandAPDU apdu) {
 		this.key = key;
 		this.description = description;
-		this.command = apdu;
+		this.apdu = apdu;
 	}
 	
 	/**
@@ -53,10 +71,51 @@ public class ProtocolCommand {
 	 * @param apdu to be send to the smart card.
 	 * @param error mapping from status bytes to error strings.
 	 */
-	public ProtocolCommand(String key, String description, ICommandAPDU apdu, Map<Integer,String> error) {
+	public ProtocolCommand(String key, String description, ICommandAPDU apdu, ProtocolErrors error) {
 		this.key = key;
 		this.description = description;
-		this.command = apdu;
-		this.errorMap = error;
+		this.apdu = apdu;
+		this.error = error;
+	}
+	
+	/**
+	 * Get the key used to identify this command.
+	 * 
+	 * @return the key used to identify this command. 
+	 */
+	public String getKey() {
+		return key;
+	}
+	
+	/**
+	 * Get the description of this command.
+	 * 
+	 * @return the description of this command. 
+	 */
+	public String getDescription() {
+		return description;
+	}
+	
+	/**
+	 * Get the command APDU for the smart card.
+	 * 
+	 * @return the command for the smart card.
+	 */
+	public ICommandAPDU getAPDU() {
+		return apdu;
+	}
+	
+	/**
+	 * Get the error message for the given status.
+	 * 
+	 * @param status received from the smart card.
+	 * @return the corresponding error message, if available.
+	 */
+	public String getErrorMessage(int status) {
+		if (error != null && error.containsKey(status)) {
+			return error.get(status);
+		} else {
+			return null;
+		}
 	}
 }

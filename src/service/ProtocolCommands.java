@@ -1,5 +1,5 @@
 /**
- * ProtocolResponses.java
+ * ProtocolCommands.java
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,22 +14,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (C) Wouter Lueks, Radboud University Nijmegen, September 2012.
+ * Copyright (C) Pim Vullers, Radboud University Nijmegen, September 2012.
  */
 
 package service;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
- * Simple type declaration for a Map containing responses to protocol commands.
+ * Simple type declaration for a List containing protocol commands.
  * 
- * @author Wouter Lueks
+ * @author Pim Vullers
  */
-public class ProtocolResponses extends HashMap<String, ProtocolResponse> {
+public class ProtocolCommands extends ArrayList<ProtocolCommand> {
 
     /**
      * Universal version identifier to match versions during deserialisation.
      */
-	private static final long serialVersionUID = 2358602306268421757L;
+	private static final long serialVersionUID = -3336896365299268066L;
+
 }

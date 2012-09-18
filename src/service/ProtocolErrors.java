@@ -1,5 +1,5 @@
 /**
- * ProtocolResponses.java
+ * IdemixErrors.java
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright (C) Wouter Lueks, Radboud University Nijmegen, September 2012.
+ * Copyright (C) Pim Vullers, Radboud University Nijmegen, September 2012.
  */
 
 package service;
@@ -22,14 +22,26 @@ package service;
 import java.util.HashMap;
 
 /**
- * Simple type declaration for a Map containing responses to protocol commands.
+ * Simple type declaration for a Map containing error messages for status words.
  * 
- * @author Wouter Lueks
+ * @author Pim Vullers
  */
-public class ProtocolResponses extends HashMap<String, ProtocolResponse> {
+public class ProtocolErrors extends HashMap<Integer, String> {
+	// TODO: automatically add a list of well-known errors
 
     /**
      * Universal version identifier to match versions during deserialisation.
      */
-	private static final long serialVersionUID = 2358602306268421757L;
+	private static final long serialVersionUID = -5991735413227319349L;
+
+	/**
+	 * Convenience constructor to easily add a single error.
+	 * 
+	 * @param status word from the smart card.
+	 * @param message describing the corresponding error.
+	 */
+	public ProtocolErrors(Integer status, String message) {
+		super();
+		put(status, message);
+	}
 }
