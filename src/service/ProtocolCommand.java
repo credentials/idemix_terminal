@@ -43,7 +43,7 @@ public class ProtocolCommand {
 	/**
 	 * The actual command APDU to be send to the smart card.
 	 */
-	private ICommandAPDU apdu;
+	private ICommandAPDU command;
 
 	/**
 	 * A map to translate smart card status bytes to error strings, can be null.
@@ -60,7 +60,7 @@ public class ProtocolCommand {
 	public ProtocolCommand(String key, String description, ICommandAPDU apdu) {
 		this.key = key;
 		this.description = description;
-		this.apdu = apdu;
+		this.command = apdu;
 	}
 	
 	/**
@@ -74,7 +74,7 @@ public class ProtocolCommand {
 	public ProtocolCommand(String key, String description, ICommandAPDU apdu, ProtocolErrors error) {
 		this.key = key;
 		this.description = description;
-		this.apdu = apdu;
+		this.command = apdu;
 		this.error = error;
 	}
 	
@@ -102,9 +102,18 @@ public class ProtocolCommand {
 	 * @return the command for the smart card.
 	 */
 	public ICommandAPDU getAPDU() {
-		return apdu;
+		return command;
 	}
-	
+
+	/**
+	 * Set a new command APDU for the smart card.
+	 * 
+	 * @param apdu to be send to the smart card. 
+	 */
+	public void setAPDU(ICommandAPDU apdu) {
+		this.command = apdu;
+	}
+
 	/**
 	 * Get the error message for the given status.
 	 * 

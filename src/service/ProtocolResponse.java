@@ -69,6 +69,15 @@ public class ProtocolResponse {
 	}
 
 	/**
+	 * Set the response from the smart card.
+	 * 
+	 * @param apdu received from the smart card.
+	 */
+	public void setAPDU(IResponseAPDU apdu) {
+		this.response = apdu;
+	}
+
+	/**
 	 * Get the response data received from the smart card.
 	 * 
 	 * @return the response data from the smart card.
@@ -84,14 +93,5 @@ public class ProtocolResponse {
 	 */
 	public int getStatus() {
 		return response.getSW();
-	}
-
-	/**
-	 * Set the response from the smart card.
-	 * 
-	 * @param apdu received from the smart card.
-	 */
-	public void setResponse(IResponseAPDU apdu) {
-		this.response = apdu;
 	}
 }
