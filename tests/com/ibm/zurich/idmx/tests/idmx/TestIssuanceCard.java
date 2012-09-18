@@ -160,7 +160,7 @@ public class TestIssuanceCard extends TestCase {
         IdemixService recipient = null;
         try {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
-            recipient = new IdemixService(new TerminalCardService(terminal));
+            recipient = new IdemixService(new TerminalCardService(terminal), (short)4);
             recipient.open();
             recipient.generateMasterSecret();
             recipient.setIssuanceSpecification(issuanceSpec);

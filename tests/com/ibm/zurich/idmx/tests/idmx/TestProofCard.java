@@ -139,7 +139,7 @@ public class TestProofCard extends TestCase {
         IdemixService prover = null;
         try {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
-            prover = new IdemixService(new TerminalCardService(terminal));
+            prover = new IdemixService(new TerminalCardService(terminal), (short)4);
             prover.open();
         } catch (Exception e) {
             fail(e.getMessage()); 
