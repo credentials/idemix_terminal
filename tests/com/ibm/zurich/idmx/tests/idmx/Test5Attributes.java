@@ -193,7 +193,7 @@ public class Test5Attributes extends TestCase {
         IdemixService recipient = null;
         try {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
-            recipient = new IdemixService(new TerminalCardService(terminal), (short)4);
+            recipient = new IdemixService(new TerminalCardService(terminal), (short)5);
             recipient.open();
 
             try {
@@ -290,7 +290,7 @@ public class Test5Attributes extends TestCase {
         IdemixService prover = null;
         try {
             CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
-            prover = new IdemixService(new TerminalCardService(terminal), (short)4);
+            prover = new IdemixService(new TerminalCardService(terminal), (short)5);
             prover.open();
         } catch (Exception e) {
             fail(e.getMessage()); 
