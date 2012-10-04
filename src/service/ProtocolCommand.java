@@ -19,7 +19,7 @@
 
 package service;
 
-import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
 
 /**
  * Simple data structure for storing APDU commands for smart cards together 
@@ -43,7 +43,7 @@ public class ProtocolCommand {
 	/**
 	 * The actual command APDU to be send to the smart card.
 	 */
-	private ICommandAPDU command;
+	private CommandAPDU command;
 
 	/**
 	 * A map to translate smart card status bytes to error strings, can be null.
@@ -57,7 +57,7 @@ public class ProtocolCommand {
 	 * @param description of the command.
 	 * @param apdu to be send to the smart card.
 	 */
-	public ProtocolCommand(String key, String description, ICommandAPDU apdu) {
+	public ProtocolCommand(String key, String description, CommandAPDU apdu) {
 		this.key = key;
 		this.description = description;
 		this.command = apdu;
@@ -71,7 +71,7 @@ public class ProtocolCommand {
 	 * @param apdu to be send to the smart card.
 	 * @param error mapping from status bytes to error strings.
 	 */
-	public ProtocolCommand(String key, String description, ICommandAPDU apdu, ProtocolErrors error) {
+	public ProtocolCommand(String key, String description, CommandAPDU apdu, ProtocolErrors error) {
 		this.key = key;
 		this.description = description;
 		this.command = apdu;
@@ -101,7 +101,7 @@ public class ProtocolCommand {
 	 * 
 	 * @return the command for the smart card.
 	 */
-	public ICommandAPDU getAPDU() {
+	public CommandAPDU getAPDU() {
 		return command;
 	}
 
@@ -110,7 +110,7 @@ public class ProtocolCommand {
 	 * 
 	 * @param apdu to be send to the smart card. 
 	 */
-	public void setAPDU(ICommandAPDU apdu) {
+	public void setAPDU(CommandAPDU apdu) {
 		this.command = apdu;
 	}
 

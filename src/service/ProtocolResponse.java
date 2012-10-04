@@ -19,7 +19,7 @@
 
 package service;
 
-import net.sourceforge.scuba.smartcards.IResponseAPDU;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 
 /**
  * Simple data structure for storing APDU responses from smart cards.
@@ -37,7 +37,7 @@ public class ProtocolResponse {
 	/**
 	 * The actual response APDU received from the smart card.
 	 */	
-	private IResponseAPDU response;
+	private ResponseAPDU response;
 
 	/**
 	 * Construct a new ProtocolResponse.
@@ -45,7 +45,7 @@ public class ProtocolResponse {
 	 * @param key used to identify the response.
 	 * @param response from the smart card.
 	 */
-	public ProtocolResponse(String key, IResponseAPDU response) {
+	public ProtocolResponse(String key, ResponseAPDU response) {
 		this.key = key;
 		this.response = response;
 	}
@@ -64,7 +64,7 @@ public class ProtocolResponse {
 	 * 
 	 * @return the response from the smart card.
 	 */
-	public IResponseAPDU getAPDU() {
+	public ResponseAPDU getAPDU() {
 		return response;
 	}
 
@@ -73,7 +73,7 @@ public class ProtocolResponse {
 	 * 
 	 * @param apdu received from the smart card.
 	 */
-	public void setAPDU(IResponseAPDU apdu) {
+	public void setAPDU(ResponseAPDU apdu) {
 		this.response = apdu;
 	}
 

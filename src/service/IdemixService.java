@@ -23,8 +23,8 @@ import java.math.BigInteger;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.ICommandAPDU;
-import net.sourceforge.scuba.smartcards.IResponseAPDU;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.util.Hex;
 
 import com.ibm.zurich.idmx.api.ProverInterface;
@@ -114,7 +114,7 @@ implements ProverInterface, RecipientInterface {
      * @return ResponseAPDU the response from the smart card.
      * @throws CardServiceException if some error occurred while transmitting.
      */
-    public IResponseAPDU transmit(ICommandAPDU capdu) 
+    public ResponseAPDU transmit(CommandAPDU capdu) 
     throws CardServiceException { 
 
         if (VERBOSE) {
@@ -123,7 +123,7 @@ implements ProverInterface, RecipientInterface {
         }
 
         long start = System.nanoTime();
-        IResponseAPDU rapdu = service.transmit(capdu);
+        ResponseAPDU rapdu = service.transmit(capdu);
         long duration = (System.nanoTime() - start)/1000000;
 
         if (VERBOSE) {
@@ -152,7 +152,7 @@ implements ProverInterface, RecipientInterface {
      */
     public ProtocolResponse execute(ProtocolCommand command)
     throws CardServiceException {
-    	IResponseAPDU response = transmit(command.getAPDU());
+    	ResponseAPDU response = transmit(command.getAPDU());
     	
     	if (response.getSW() != 0x00009000) {
     		// don't bother with the rest of the commands...
