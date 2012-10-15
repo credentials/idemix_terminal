@@ -21,9 +21,7 @@ package service;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -589,8 +587,6 @@ public class IdemixSmartcard {
         // Set the system parameters 
     	SystemParameters sysPars = spec.getGroupParams().getSystemParams();
     	
-        List<Integer> disclosed = new Vector<Integer>();        
-
         Predicate predicate = spec.getPredicates().firstElement();
         if (predicate.getPredicateType() != PredicateType.CL) {
             throw new RuntimeException("Unimplemented predicate.");
@@ -600,28 +596,22 @@ public class IdemixSmartcard {
         CredentialStructure cred = (CredentialStructure) store.get(
                pred.getCredStructLocation());
 
+        // Determine the disclusure selection bitmask
+        int D = 0;
         for (AttributeStructure attribute : cred.getAttributeStructs()) {
-            String attName = attribute.getName();
-            Identifier identifier = pred.getIdentifier(attName);
+            Identifier identifier = pred.getIdentifier(attribute.getName());
             if (identifier.isRevealed()) {
-                disclosed.add(attribute.getKeyIndex());
+            	D |= 1 << attribute.getKeyIndex();
             }
         }
         
-        // translate the List to a byte[] 
-        Collections.sort(disclosed);
-        byte[] D = new byte[disclosed.size()];
-        for (int i = 0; i < disclosed.size(); i++) {
-            D[i] = disclosed.get(i).byteValue();
-        }
-
         commands.add(
         		startProofCommand(spec, id));
         commands.add(
         		new ProtocolCommand(
         				"disclosure_d",
         				"Attribute disclosure selection",
-        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SELECTION, 0x00, 0x00, D)));
+        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SELECTION, (byte) ((D >> 8) & 0xFF), (byte) (D & 0xFF))));
         commands.add(
         		new ProtocolCommand(
         				"challenge_c",
