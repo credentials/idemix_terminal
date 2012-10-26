@@ -66,12 +66,11 @@ implements ProverInterface, RecipientInterface {
 	 */
 	protected IssuanceSpec issuanceSpec;
 	
+	/**
+	 * Credential identifier.
+	 */
 	protected short credentialId;
 	
-	public IdemixService(CardService service, short credentialId) {
-		this.service = service;
-		this.credentialId = credentialId; 
-	}
 	
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
@@ -87,6 +86,18 @@ implements ProverInterface, RecipientInterface {
         this.service = service;
     }
 
+    /**
+     * Construct a new Idemix service based on some CardService, which will be
+     * used for the actual communication with an Idemix applet.
+     * 
+     * @param service the service to use for communication with the applet.
+     * @param credential identifier.
+     */    
+	public IdemixService(CardService service, short credentialId) {
+		this.service = service;
+		this.credentialId = credentialId; 
+	}
+	
     /**
      * Open a communication channel to an Idemix applet.
      */
@@ -182,6 +193,15 @@ implements ProverInterface, RecipientInterface {
         }
         
     	return responses;
+    }
+    
+    /**
+     * Set the credential to interact with.
+     * 
+     * @param identifier of the credential.
+     */
+    public void setCredential(short identifier) {
+    	credentialId = identifier;
     }
     
     /**
