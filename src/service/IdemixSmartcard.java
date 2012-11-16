@@ -177,6 +177,13 @@ public class IdemixSmartcard {
      */
     private static final byte INS_PROVE_RESPONSE = 0x25;
 
+    private static final byte INS_ADMIN_CREDENTIAL = 0x30;
+    private static final byte INS_ADMIN_REMOVE = 0x31;
+    private static final byte INS_ADMIN_FLAGS = 0x32;
+    private static final byte INS_ADMIN_LIST = 0x33;
+    private static final byte INS_ADMIN_ATTRIBUTE = 0x34;
+    private static final byte INS_ADMIN_LOG = 0x35;
+
     /**
      * P1 parameter for the PROOF_U data instructions. 
      */
@@ -199,6 +206,8 @@ public class IdemixSmartcard {
     private static final byte P1_PROOF_A_S_E = 0x01;
     private static final byte P1_PROOF_A_VERIFY = 0x02;
     
+    public static final byte PIN_CRED = 0x00;
+    public static final byte PIN_CARD = (byte) 0xFF;
 
     /**
      * Produces an unsigned byte-array representation of a BigInteger.
@@ -402,23 +411,23 @@ public class IdemixSmartcard {
     
 
     
-    public static ProtocolCommand sendPinCommand(byte[] pin) {
+    public static ProtocolCommand sendPinCommand(byte pinID, byte[] pin) {
     	return
     			new ProtocolCommand(
     					"sendpin",
     					"Authorize using PIN",
     					new CommandAPDU(
-    			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, 0x00, pin)
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, pinID, 0x00, pin)
     					);
     }
 
-	public static ProtocolCommand updatePinCommand(byte[] pin) {
+	public static ProtocolCommand updatePinCommand(byte pinID, byte[] pin) {
     	return
     			new ProtocolCommand(
     					"updatepin",
     					"Update current PIN",
     					new CommandAPDU(
-    			        		ISO7816.CLA_ISO7816, ISO7816.INS_CHANGE_CHV, 0x00, 0x00, pin)
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_CHANGE_CHV, pinID, 0x00, pin)
     					);
 	}
     

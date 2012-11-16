@@ -221,7 +221,17 @@ implements ProverInterface, RecipientInterface {
      */
     public void sendPin(byte[] pin)
     throws CardServiceException {
-        execute(IdemixSmartcard.sendPinCommand(pin));
+        sendPin(IdemixSmartcard.PIN_CRED, pin);
+    }
+
+    /**
+     * Send the pin to the card.
+     *
+     * @throws CardServiceException if an error occurred.
+     */
+    public void sendPin(byte pinID, byte[] pin)
+    throws CardServiceException {
+        execute(IdemixSmartcard.sendPinCommand(pinID, pin));
     }
     
     /**
@@ -232,7 +242,18 @@ implements ProverInterface, RecipientInterface {
 	 */
     public void updatePin(byte[] pin)
     throws CardServiceException {
-    	execute(IdemixSmartcard.updatePinCommand(pin));
+    	updatePin(IdemixSmartcard.PIN_CRED, pin);
+    }
+
+    /**
+	 * Update the pin on the card
+	 *
+	 * Note that to use this function one first needs to establish an
+	 * authenticated connection to the card.
+	 */
+    public void updatePin(byte pinID, byte[] pin)
+    throws CardServiceException {
+    	execute(IdemixSmartcard.updatePinCommand(pinID, pin));
     }
 
     /**
