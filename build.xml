@@ -46,4 +46,9 @@
   </target>
   
   <target name="all" depends="archive,development,library" />
+
+  <target name="eclipse">
+    <copy file="${eclipse.dir}/.project" todir="${base.dir}" />
+    <copy file="${eclipse.dir}/.classpath" todir="${base.dir}" />
+  </target>
 </project>
