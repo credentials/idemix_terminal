@@ -1,19 +1,19 @@
 /**
  * IdemixSmartcard.java
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) Pim Vullers, Radboud University Nijmegen, June 2011.
  */
 
@@ -48,13 +48,13 @@ import com.ibm.zurich.idmx.utils.SystemParameters;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
- *  
+ *
  * @author Pim Vullers
  * @version $Revision: 554 $ by $Author: pim $
  *          $LastChangedDate: 2011-04-28 16:31:47 +0200 (Thu, 28 Apr 2011) $
  */
 public class IdemixSmartcard {
-	
+
     /**
      * AID of the Idemix applet: ASCII encoding of "idemix".
      */
@@ -80,7 +80,7 @@ public class IdemixSmartcard {
      */
     @SuppressWarnings("unused")
 	private static final byte INS_SELECT_CREDENTIAL = 0x00;
-    
+
     /**
      * INStruction to generate the master secret on the card.
      */
@@ -93,60 +93,60 @@ public class IdemixSmartcard {
     private static final byte INS_ISSUE_CREDENTIAL = 0x10;
 
     /**
-     * INStruction to issue the n value from the issuer public key. 
+     * INStruction to issue the n value from the issuer public key.
      */
     private static final byte INS_ISSUE_PUBLIC_KEY_N = 0x11;
 
     /**
-     * INStruction to issue the z value from the issuer public key. 
+     * INStruction to issue the z value from the issuer public key.
      */
     private static final byte INS_ISSUE_PUBLIC_KEY_Z = 0x12;
-    
+
     /**
-     * INStruction to issue the s value from the issuer public key. 
+     * INStruction to issue the s value from the issuer public key.
      */
     private static final byte INS_ISSUE_PUBLIC_KEY_S = 0x13;
-    
+
     /**
-     * INStruction to issue the R values from the issuer public key. 
+     * INStruction to issue the R values from the issuer public key.
      */
     private static final byte INS_ISSUE_PUBLIC_KEY_R = 0x14;
-    
+
     /**
-     * INStruction to issue the attributes. 
+     * INStruction to issue the attributes.
      */
     private static final byte INS_ISSUE_ATTRIBUTES = 0x15;
 
     /**
-     * INStruction to send the first nonce (n_1) and compute/receive the 
+     * INStruction to send the first nonce (n_1) and compute/receive the
      * combined hidden attributes (U).
      */
     private static final byte INS_ISSUE_NONCE_1 = 0x16;
 
     /**
-     * INStruction to receive the zero-knowledge proof for correct construction 
-     * of U (c, v^', s_A). 
+     * INStruction to receive the zero-knowledge proof for correct construction
+     * of U (c, v^', s_A).
      */
     private static final byte INS_ISSUE_PROOF_U = 0x17;
 
     /**
-     * INStruction to receive the second nonce (n_2). 
+     * INStruction to receive the second nonce (n_2).
      */
     private static final byte INS_ISSUE_NONCE_2 = 0x18;
 
     /**
-     * INStruction to send the blind signature (A, e, v''). 
+     * INStruction to send the blind signature (A, e, v'').
      */
     private static final byte INS_ISSUE_SIGNATURE = 0x19;
 
     /**
-     * INStruction to send the zero-knowledge proof for correct construction of 
-     * the signature (s_e, c'). 
+     * INStruction to send the zero-knowledge proof for correct construction of
+     * the signature (s_e, c').
      */
     private static final byte INS_ISSUE_PROOF_A = 0x1A;
 
     /**
-     * INStruction to start proving aattributes from a credential (and to set 
+     * INStruction to start proving attributes from a credential (and to set
      * the corresponding context).
      */
     private static final byte INS_PROVE_CREDENTIAL = 0x20;
@@ -157,13 +157,13 @@ public class IdemixSmartcard {
     private static final byte INS_PROVE_SELECTION = 0x21;
 
     /**
-     * INStruction to send the challenge (m) to be signed in the proof and 
-     * receive the commitment for the proof (a). 
+     * INStruction to send the challenge (m) to be signed in the proof and
+     * receive the commitment for the proof (a).
      */
     private static final byte INS_PROVE_NONCE = 0x22;
 
     /**
-     * INStruction to receive the values A', e^ and v^. 
+     * INStruction to receive the values A', e^ and v^.
      */
     private static final byte INS_PROVE_SIGNATURE = 0x23;
 
@@ -173,19 +173,48 @@ public class IdemixSmartcard {
     private static final byte INS_PROVE_ATTRIBUTE = 0x24;
 
     /**
-     * INStruction to receive the values for the undisclosed attributes (r_i). 
+     * INStruction to receive the values for the undisclosed attributes (r_i).
      */
     private static final byte INS_PROVE_RESPONSE = 0x25;
 
-    private static final byte INS_ADMIN_CREDENTIAL = 0x30;
-    private static final byte INS_ADMIN_REMOVE = 0x31;
-    private static final byte INS_ADMIN_FLAGS = 0x32;
-    private static final byte INS_ADMIN_LIST = 0x33;
-    private static final byte INS_ADMIN_ATTRIBUTE = 0x34;
+    /**
+     * INStruction to select a credential on the card.
+     */
+    @SuppressWarnings("unused")
+	private static final byte INS_ADMIN_CREDENTIAL = 0x30;
+
+    /**
+     * INStruction to get a list of credentials stored on the card.
+     */
+    @SuppressWarnings("unused")
+    private static final byte INS_ADMIN_CREDENTIALS = 0x31;
+
+    /**
+     * INStruction to get an attribute from the current selected credential.
+     */
+    @SuppressWarnings("unused")
+    private static final byte INS_ADMIN_ATTRIBUTE = 0x32;
+
+    /**
+     * INStruction to remove a credential from the card.
+     */
+    @SuppressWarnings("unused")
+    private static final byte INS_ADMIN_REMOVE = 0x33;
+
+    /**
+     * INStruction to modify the flags of a credential.
+     */
+    @SuppressWarnings("unused")
+    private static final byte INS_ADMIN_FLAGS = 0x34;
+
+    /**
+     * INStruction to get the transaction log from the card.
+     */
+    @SuppressWarnings("unused")
     private static final byte INS_ADMIN_LOG = 0x35;
 
     /**
-     * P1 parameter for the PROOF_U data instructions. 
+     * P1 parameter for the PROOF_U data instructions.
      */
     private static final byte P1_PROOF_U_C = 0x00;
     private static final byte P1_PROOF_U_VPRIMEHAT = 0x01;
@@ -200,12 +229,12 @@ public class IdemixSmartcard {
     private static final byte P1_SIGNATURE_VERIFY = 0x03;
 
     /**
-     * P1 parameters for PROOF_A data instructions. 
+     * P1 parameters for PROOF_A data instructions.
      */
     private static final byte P1_PROOF_A_C = 0x00;
     private static final byte P1_PROOF_A_S_E = 0x01;
     private static final byte P1_PROOF_A_VERIFY = 0x02;
-    
+
     public static final byte PIN_CRED = 0x00;
     public static final byte PIN_CARD = (byte) 0xFF;
 
@@ -219,9 +248,9 @@ public class IdemixSmartcard {
      * the BigInteger without extra sign bits.
      *
      * <p>This method is taken from the Network Security Services for Java (JSS)
-     * currently maintained by the Mozilla Foundation and originally developed 
+     * currently maintained by the Mozilla Foundation and originally developed
      * by the Netscape Communications Corporation.
-     * 
+     *
      * @return unsigned big-endian byte array representation of a BigInteger.
      */
     public static byte[] BigIntegerToUnsignedByteArray(BigInteger big) {
@@ -245,10 +274,10 @@ public class IdemixSmartcard {
         }
         return ret;
     }
-    
+
     /**
      * Fix the length of array representation of BigIntegers put into the APDUs.
-     * 
+     *
      * @param integer of which the length needs to be fixed.
      * @param the new length of the integer in bits
      * @return an array with a fixed length.
@@ -256,14 +285,14 @@ public class IdemixSmartcard {
     public static byte[] fixLength(BigInteger integer, int length_in_bits) {
         byte[] array = BigIntegerToUnsignedByteArray(integer);
         int length;
-        
+
         length = length_in_bits/8;
         if (length_in_bits % 8 != 0){
         	length++;
         }
-        
+
         assert (array.length <= length);
-        
+
         int padding = length - array.length;
         byte[] fixed = new byte[length];
         Arrays.fill(fixed, (byte) 0x00);
@@ -277,40 +306,40 @@ public class IdemixSmartcard {
 
     public static ProtocolCommand selectAppletCommand =
     		new ProtocolCommand(
-    				"selectapplet", 
+    				"selectapplet",
     				"Select idemix applet",
-    				 new CommandAPDU(ISO7816.CLA_ISO7816,  
+    				 new CommandAPDU(ISO7816.CLA_ISO7816,
     			                INS_SELECT, P1_SELECT, 0x00, AID, 256)); // LE == 0 is required.
 
-    
+
     /**
      * Get the APDU commands for setting the specification of
      * a certificate issuance:
      * <ul>
-     *   <li> issuer public key, and 
-     *   <li> context. 
+     *   <li> issuer public key, and
+     *   <li> context.
      * </ul>
-     * 
+     *
      * @param spec the specification to be set
      * @param id
      * @return
      */
     public static ProtocolCommands setIssuanceSpecificationCommands(IssuanceSpec spec, short id) {
     	ProtocolCommands commands = new ProtocolCommands();
-    	
+
     	commands.add(startIssuanceCommand(spec, id));
-    	
+
     	commands.addAll(setPublicKeyCommands(
     				spec.getPublicKey(),
     				spec.getCredentialStructure().getAttributeStructs().size() + 1));
     	return commands;
     }
-    
-    
+
+
     /**
-     * Get the APDU commands for setting the public key on 
+     * Get the APDU commands for setting the public key on
      * the card.
-     *  
+     *
      * @param spec Issuance spec to get the public key from.
      * @return
      */
@@ -323,17 +352,17 @@ public class IdemixSmartcard {
     					"publickey_n",
     					"Set public key (n)",
     					new CommandAPDU(
-    			        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_N, 0x00, 0x00, 
+    			        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_N, 0x00, 0x00,
     			                fixLength(pubKey.getN(), l_n))));
-    	
+
     	commands.add(
     			new ProtocolCommand(
     					"publickey_z",
     					"Set public key (Z)",
     					new CommandAPDU(
-    			        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_Z, 0x00, 0x00, 
+    			        		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_Z, 0x00, 0x00,
     			                fixLength(pubKey.getCapZ(), l_n))));
-    	
+
     	commands.add(
     			new ProtocolCommand(
     					"publickey_s",
@@ -346,32 +375,32 @@ public class IdemixSmartcard {
     	for (int i = 0; i < pubKeyElements; i++) {
         	commands.add(
         			new ProtocolCommand(
-        					"publickey_element" + i, 
+        					"publickey_element" + i,
         					"Set public key element (R@index " + i + ")",
         					new CommandAPDU(
-        		            		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_R, i, 0x00, 
+        		            		CLA_IDEMIX, INS_ISSUE_PUBLIC_KEY_R, i, 0x00,
         		            		fixLength(pubKeyElement[i], l_n))));
     	}
 
-    	return commands;    	
+    	return commands;
     }
 
-    
+
     /**
      * Get the APDU commands to start issuance.
-     * 
+     *
      * @param spec Issuance specification
      * @param id id of credential
      * @return
      */
     public static ProtocolCommand startIssuanceCommand(IssuanceSpec spec, short id) {
     	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
-    	
+
     	return new ProtocolCommand(
-    					"start_issuance", 
+    					"start_issuance",
     					"Start credential issuance.",
     					new CommandAPDU(
-    			        		CLA_IDEMIX, INS_ISSUE_CREDENTIAL, id >> 8, id & 0xff, 
+    			        		CLA_IDEMIX, INS_ISSUE_CREDENTIAL, id >> 8, id & 0xff,
     			        		fixLength(spec.getContext(), l_H)),
     			        new ProtocolErrors(
     			        		0x00006986,"Credential already issued."));
@@ -379,20 +408,20 @@ public class IdemixSmartcard {
 
     /**
      * Get the APDU commands to start proof.
-     * 
+     *
      * @param spec Proof specification
      * @param id id of credential
      * @return
      */
     public static ProtocolCommand startProofCommand(ProofSpec spec, short id) {
     	int l_H = spec.getGroupParams().getSystemParams().getL_H();
-    	
+
     	return
     			new ProtocolCommand(
-    					"startprove", 
-    					"Start credential proof.", 
+    					"startprove",
+    					"Start credential proof.",
     					new CommandAPDU(
-    			        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff, 
+    			        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff,
     			        		fixLength(spec.getContext(), l_H)),
     			        new ProtocolErrors(
     			        		0x00006A88,"Credential not found."));
@@ -408,9 +437,9 @@ public class IdemixSmartcard {
     			        		CLA_IDEMIX, INS_GENERATE_SECRET, 0x00, 0x00),
     			        new ProtocolErrors(
     			        		0x00006986,"Master secret already set."));
-    
 
-    
+
+
     public static ProtocolCommand sendPinCommand(byte pinID, byte[] pin) {
     	return
     			new ProtocolCommand(
@@ -430,14 +459,14 @@ public class IdemixSmartcard {
     			        		ISO7816.CLA_ISO7816, ISO7816.INS_CHANGE_CHV, pinID, 0x00, pin)
     					);
 	}
-    
+
     /**
      * Get the APDU commands for setting the attributes:
-     * 
+     *
      * <pre>
      *   m_1, ..., m_l
      * </pre>
-     * 
+     *
      * @param spec the issuance specification for the ordering of the values.
      * @param values the attributes to be set.
      * @return
@@ -454,14 +483,14 @@ public class IdemixSmartcard {
         					"setattr"+i,
         					"Set attribute (m@index" + i + ")",
         					new CommandAPDU(
-        		            		CLA_IDEMIX, INS_ISSUE_ATTRIBUTES, i, 0x00, 
+        		            		CLA_IDEMIX, INS_ISSUE_ATTRIBUTES, i, 0x00,
         		                    fixLength(attr, L_m))));
         	i += 1;
         }
     	return commands;
     }
-    
-    
+
+
     public static ProtocolCommands round1Commands(IssuanceSpec spec, final Message msg) {
     	ProtocolCommands commands = new ProtocolCommands();
         BigInteger theNonce1 = msg.getIssuanceElement(
@@ -472,7 +501,7 @@ public class IdemixSmartcard {
     					"nonce_n1",
     					"Issue nonce n1",
     					new CommandAPDU(
-    		            		CLA_IDEMIX, INS_ISSUE_NONCE_1, 0x00, 0x00, 
+    		            		CLA_IDEMIX, INS_ISSUE_NONCE_1, 0x00, 0x00,
     		                    fixLength(theNonce1,L_Phi))));
     	commands.add(
     			new ProtocolCommand(
@@ -480,7 +509,7 @@ public class IdemixSmartcard {
     					"Issue proof c",
     					new CommandAPDU(
     		            		CLA_IDEMIX, INS_ISSUE_PROOF_U, P1_PROOF_U_C, 0x00)));
-    	
+
     	commands.add(
     			new ProtocolCommand(
     					"vHatPrime",
@@ -503,43 +532,43 @@ public class IdemixSmartcard {
     }
 
     public static Message processRound1Responses(ProtocolResponses responses) {
-    	HashMap<IssuanceProtocolValues, BigInteger> issuanceProtocolValues = 
+    	HashMap<IssuanceProtocolValues, BigInteger> issuanceProtocolValues =
                 new HashMap<IssuanceProtocolValues, BigInteger>();
-        TreeMap<String, BigInteger> additionalValues = 
+        TreeMap<String, BigInteger> additionalValues =
                 new TreeMap<String, BigInteger>();
         HashMap<String, SValue> sValues = new HashMap<String, SValue>();
-    	
-    	issuanceProtocolValues.put(IssuanceProtocolValues.capU, 
+
+    	issuanceProtocolValues.put(IssuanceProtocolValues.capU,
                 new BigInteger(1, responses.get("nonce_n1").getData()));
-    	
+
     	BigInteger challenge = new BigInteger(1, responses.get("proof_c").getData());
-    	
-        additionalValues.put(IssuanceSpec.vHatPrime, 
+
+        additionalValues.put(IssuanceSpec.vHatPrime,
                 new BigInteger(1, responses.get("vHatPrime").getData()));
-        
+
         sValues.put(IssuanceSpec.MASTER_SECRET_NAME,
                 new SValue(new BigInteger(1, responses.get("proof_s_A").getData())));
-        
+
         issuanceProtocolValues.put(IssuanceProtocolValues.nonce,
                 new BigInteger(1, responses.get("nonce_n2").getData()));
-        
+
         // Return the next protocol message
-        return new Message(issuanceProtocolValues, 
-                new Proof(challenge, sValues, additionalValues));        
+        return new Message(issuanceProtocolValues,
+                new Proof(challenge, sValues, additionalValues));
     }
-    
+
 
     public static ProtocolCommands round3Commands(IssuanceSpec spec, final Message msg) {
     	ProtocolCommands commands = new ProtocolCommands();
     	SystemParameters sysPars = spec.getPublicKey().getGroupParams().getSystemParams();
-    	
+
     	BigInteger A = msg.getIssuanceElement(IssuanceProtocolValues.capA);
     	commands.add(
     			new ProtocolCommand(
     					"signature_A",
     					"Issue signature A",
     					new CommandAPDU(
-    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_A, 0x00, 
+    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_A, 0x00,
     		                    fixLength(A, sysPars.getL_n()))));
     	BigInteger e = msg.getIssuanceElement(IssuanceProtocolValues.e);
     	commands.add(
@@ -547,7 +576,7 @@ public class IdemixSmartcard {
     					"signature_e",
     					"Issue signature e",
     					new CommandAPDU(
-    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_E, 0x00, 
+    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_E, 0x00,
     		                    fixLength(e, sysPars.getL_e()))));
     	BigInteger v = msg.getIssuanceElement(IssuanceProtocolValues.vPrimePrime);
     	commands.add(
@@ -555,7 +584,7 @@ public class IdemixSmartcard {
     					"vPrimePrime",
     					"Issue signature v''",
     					new CommandAPDU(
-    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_V, 0x00, 
+    		            		CLA_IDEMIX, INS_ISSUE_SIGNATURE, P1_SIGNATURE_V, 0x00,
     		                    fixLength(v, sysPars.getL_v()))));
     	commands.add(
     			new ProtocolCommand(
@@ -569,16 +598,16 @@ public class IdemixSmartcard {
     					"proof_c",
     					"Issue proof c'",
     					new CommandAPDU(
-    		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_C, 0x00, 
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_C, 0x00,
     		                    fixLength(c, sysPars.getL_H()))));
-    	BigInteger s_e = 
+    	BigInteger s_e =
         		(BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
     	commands.add(
     			new ProtocolCommand(
     					"proof_s_e",
     					"Issue proof s_e",
     					new CommandAPDU(
-    		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_S_E, 0x00, 
+    		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_S_E, 0x00,
     		                    fixLength(s_e, sysPars.getL_n()))));
     	commands.add(
     			new ProtocolCommand(
@@ -588,14 +617,14 @@ public class IdemixSmartcard {
     		            		CLA_IDEMIX, INS_ISSUE_PROOF_A, P1_PROOF_A_VERIFY, 0x00)));
     	return commands;
     }
-    
 
-    
+
+
     public static ProtocolCommands buildProofCommands(final BigInteger nonce, final ProofSpec spec, short id) {
     	ProtocolCommands commands = new ProtocolCommands();
-        // Set the system parameters 
+        // Set the system parameters
     	SystemParameters sysPars = spec.getGroupParams().getSystemParams();
-    	
+
         Predicate predicate = spec.getPredicates().firstElement();
         if (predicate.getPredicateType() != PredicateType.CL) {
             throw new RuntimeException("Unimplemented predicate.");
@@ -613,7 +642,7 @@ public class IdemixSmartcard {
             	D |= 1 << attribute.getKeyIndex();
             }
         }
-        
+
         commands.add(
         		startProofCommand(spec, id));
         commands.add(
@@ -625,7 +654,7 @@ public class IdemixSmartcard {
         		new ProtocolCommand(
         				"challenge_c",
         				"Send challenge n1",
-        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_NONCE, 0x00, 0x00, 
+        				new CommandAPDU(CLA_IDEMIX, INS_PROVE_NONCE, 0x00, 0x00,
         	                    fixLength(nonce, sysPars.getL_Phi()))));
         commands.add(
         		new ProtocolCommand(
@@ -639,18 +668,18 @@ public class IdemixSmartcard {
         				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_E, 0x00)));
         commands.add(
         		new ProtocolCommand(
-        				"signature_v", 
+        				"signature_v",
         				"Get random signature v^",
             				new CommandAPDU(CLA_IDEMIX, INS_PROVE_SIGNATURE, P1_SIGNATURE_V, 0x00)));
         commands.add(
         		new ProtocolCommand(
-        				"master", 
+        				"master",
         				"Get random value (@index 0).",
         				new CommandAPDU(CLA_IDEMIX, INS_PROVE_RESPONSE, 0x00, 0x00)));
-        
+
         // iterate over all the identifiers
         for (AttributeStructure attribute : cred.getAttributeStructs()) {
-        	
+
             String attName = attribute.getName();
             Identifier identifier = pred.getIdentifier(attName);
             int i = attribute.getKeyIndex();
@@ -664,19 +693,19 @@ public class IdemixSmartcard {
             } else {
             	commands.add(
                 		new ProtocolCommand(
-                				"attr_"+attName, 
+                				"attr_"+attName,
                 				"Get random value (@index " + i + ").",
                 				new CommandAPDU(CLA_IDEMIX, INS_PROVE_RESPONSE, i, 0x00)));
             }
 
-        }        
+        }
     	return commands;
     }
-    
+
     public static Proof processBuildProofResponses(ProtocolResponses responses, final ProofSpec spec) {
         HashMap<String, SValue> sValues = new HashMap<String, SValue>();
         TreeMap<String, BigInteger> commonList = new TreeMap<String, BigInteger>();
-        
+
         Predicate predicate = spec.getPredicates().firstElement();
         if (predicate.getPredicateType() != PredicateType.CL) {
             throw new RuntimeException("Unimplemented predicate.");
@@ -690,25 +719,25 @@ public class IdemixSmartcard {
         BigInteger challenge = new BigInteger(1, responses.get("challenge_c").getData());
 
         commonList.put(pred.getTempCredName(),
-        				new BigInteger(1, responses.get("signature_A").getData()));             
-        
-        sValues.put(pred.getTempCredName(), 
+        				new BigInteger(1, responses.get("signature_A").getData()));
+
+        sValues.put(pred.getTempCredName(),
         		new SValue(
         				new SValuesProveCL(
-        						new BigInteger(1, responses.get("signature_e").getData()), 
+        						new BigInteger(1, responses.get("signature_e").getData()),
         						new BigInteger(1, responses.get("signature_v").getData())
         						)));
 
-        sValues.put(IssuanceSpec.MASTER_SECRET_NAME, 
+        sValues.put(IssuanceSpec.MASTER_SECRET_NAME,
         		new SValue(new BigInteger(1, responses.get("master").getData())));
-                    
+
         for (AttributeStructure attribute : cred.getAttributeStructs()) {
         	String attName = attribute.getName();
             Identifier identifier = pred.getIdentifier(attName);
-            sValues.put(identifier.getName(), 
+            sValues.put(identifier.getName(),
             		new SValue(new BigInteger(1, responses.get("attr_" + attName).getData())));
         }
-        
+
         // Return the generated proof, based on the proof specification
         return new Proof(challenge, sValues, commonList);
     }
