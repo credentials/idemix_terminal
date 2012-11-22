@@ -186,32 +186,33 @@ public class IdemixSmartcard {
     /**
      * INStruction to get a list of credentials stored on the card.
      */
-    @SuppressWarnings("unused")
     private static final byte INS_ADMIN_CREDENTIALS = 0x31;
 
     /**
      * INStruction to get an attribute from the current selected credential.
      */
-    @SuppressWarnings("unused")
     private static final byte INS_ADMIN_ATTRIBUTE = 0x32;
 
     /**
      * INStruction to remove a credential from the card.
      */
-    @SuppressWarnings("unused")
     private static final byte INS_ADMIN_REMOVE = 0x33;
+
+    /**
+     * INStruction to get the flags of a credential.
+     */
+    private static final byte INS_ADMIN_GET_FLAGS = 0x34;
 
     /**
      * INStruction to modify the flags of a credential.
      */
-    @SuppressWarnings("unused")
-    private static final byte INS_ADMIN_FLAGS = 0x34;
+    private static final byte INS_ADMIN_SET_FLAGS = 0x35;
 
     /**
      * INStruction to get the transaction log from the card.
      */
     @SuppressWarnings("unused")
-    private static final byte INS_ADMIN_LOG = 0x35;
+    private static final byte INS_ADMIN_LOG = 0x36;
 
     /**
      * P1 parameter for the PROOF_U data instructions.
@@ -741,4 +742,46 @@ public class IdemixSmartcard {
         // Return the generated proof, based on the proof specification
         return new Proof(challenge, sValues, commonList);
     }
+    
+	public static ProtocolCommand getCredentialsCommand() {
+		return new ProtocolCommand(
+			"getcredentials", 
+			"Get list of credentials",
+			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_CREDENTIALS, 0x00, 0x00));
+	}
+
+	public static ProtocolCommands getAttributesCommands(IssuanceSpec spec) {
+		ProtocolCommands commands = new ProtocolCommands();
+		for (AttributeStructure attribute : spec.getCredentialStructure()
+				.getAttributeStructs()) {
+			String attName = attribute.getName();
+			int i = attribute.getKeyIndex();
+			commands.add(new ProtocolCommand(
+				"attr_" + attName,
+				"Get attribute (@index " + i + ")", 
+				new CommandAPDU(CLA_IDEMIX, INS_ADMIN_ATTRIBUTE, i, 0x00)));
+		}
+		return commands;
+	}
+
+	public static ProtocolCommand removeCredentialCommand(short id) {
+		return new ProtocolCommand(
+			"removecredential", 
+			"Remove credential (id " + id + ")", 
+			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_REMOVE, id >> 8, id & 0xff));
+	}
+
+	public static ProtocolCommand getCredentialFlagsCommand() {
+		return new ProtocolCommand(
+			"getcredflags", 
+			"Get credential flags",
+			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_GET_FLAGS, 0, 0));
+	}
+
+	public static ProtocolCommand setCredentialFlagsCommand(short flags) {
+		return new ProtocolCommand(
+			"setcredflags", 
+			"Set credential flags (" + flags + ")", 
+			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_SET_FLAGS, flags >> 8, flags));
+	}
 }

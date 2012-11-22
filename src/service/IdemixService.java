@@ -20,6 +20,9 @@
 package service;
 
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Vector;
+
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
@@ -31,6 +34,7 @@ import com.ibm.zurich.idmx.api.ProverInterface;
 import com.ibm.zurich.idmx.api.RecipientInterface;
 import com.ibm.zurich.idmx.dm.Credential;
 import com.ibm.zurich.idmx.dm.Values;
+import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
 import com.ibm.zurich.idmx.issuance.IssuanceSpec;
 import com.ibm.zurich.idmx.issuance.Message;
 import com.ibm.zurich.idmx.showproof.Proof;
@@ -366,7 +370,55 @@ implements ProverInterface, RecipientInterface {
      * @param values the attributes to be set.
      * @throws CardServiceException if an error occurred.
      */
-    public void setAttributes(IssuanceSpec spec, Values values) throws CardServiceException {
+    public void setAttributes(IssuanceSpec spec, Values values)
+    throws CardServiceException {
         execute(IdemixSmartcard.setAttributesCommands(spec, values));
+    }
+    
+    public Vector<Integer> getCredentials() 
+    throws CardServiceException {
+    	Vector<Integer> list = new Vector<Integer>();
+    	
+    	ProtocolResponse response = execute(IdemixSmartcard.getCredentialsCommand());
+    	byte[] data = response.getData();
+    	
+    	for (int i = 0; i < data.length; i = i+2) {
+    		int id = ((data[i] & 0xff) << 8) | data[i + 1];
+    		if (id != 0) {
+    			list.add(id);
+    		}
+    	}
+    	
+    	return list;
+    }
+    
+    public HashMap<String, BigInteger> getAttributes(IssuanceSpec spec)
+    throws CardServiceException {
+    	HashMap<String, BigInteger> attributes = new HashMap<String, BigInteger>();
+    	ProtocolCommands commands = IdemixSmartcard.getAttributesCommands(spec);
+        ProtocolResponses responses = execute(commands);
+        for (AttributeStructure attribute : spec.getCredentialStructure().getAttributeStructs()) {
+        	String attName = attribute.getName();
+            attributes.put(attName,
+            		new BigInteger(1, responses.get("attr_" + attName).getData()));
+        }
+        return attributes;
+    }
+    
+    public void removeCredential(short id)
+    throws CardServiceException {
+    	execute(IdemixSmartcard.removeCredentialCommand(id));
+    }
+    
+    public short getCredentialFlags()
+    throws CardServiceException {
+    	ProtocolResponse response = execute(IdemixSmartcard.getCredentialFlagsCommand());
+    	byte[] data = response.getData();
+    	return (short) ((data[0] << 8) | data[1]);
+    }
+    
+    public void setCredentialFlags(short flags)
+    throws CardServiceException {
+    	execute(IdemixSmartcard.setCredentialFlagsCommand(flags));
     }
 }
