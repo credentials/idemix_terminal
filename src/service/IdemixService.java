@@ -158,6 +158,11 @@ implements ProverInterface, RecipientInterface {
         }
     }
     
+	public byte[] getATR() 
+	throws CardServiceException {
+		return service.getATR();
+	}
+
     /**
      * Execute a protocol command on the smart card.
      * 
