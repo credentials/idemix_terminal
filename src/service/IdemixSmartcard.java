@@ -237,7 +237,7 @@ public class IdemixSmartcard {
     private static final byte P1_PROOF_A_VERIFY = 0x02;
 
     public static final byte PIN_CRED = 0x00;
-    public static final byte PIN_CARD = (byte) 0xFF;
+    public static final byte PIN_CARD = (byte) 0x01;
 
     /**
      * Produces an unsigned byte-array representation of a BigInteger.
