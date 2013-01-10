@@ -237,7 +237,7 @@ public class IdemixSmartcard {
     private static final byte P1_PROOF_A_VERIFY = 0x02;
 
     public static final byte PIN_CRED = 0x00;
-    public static final byte PIN_CARD = (byte) 0xFF;
+    public static final byte PIN_CARD = 0x01;
 
     /**
      * Produces an unsigned byte-array representation of a BigInteger.
@@ -631,11 +631,10 @@ public class IdemixSmartcard {
             throw new RuntimeException("Unimplemented predicate.");
         }
         CLPredicate pred = ((CLPredicate) predicate);
-        StructureStore store = StructureStore.getInstance();
-        CredentialStructure cred = (CredentialStructure) store.get(
-               pred.getCredStructLocation());
+        CredentialStructure cred = (CredentialStructure) 
+        		StructureStore.getInstance().get(pred.getCredStructLocation());
 
-        // Determine the disclusure selection bitmask
+        // Determine the disclosure selection bitmask
         int D = 0;
         for (AttributeStructure attribute : cred.getAttributeStructs()) {
             Identifier identifier = pred.getIdentifier(attribute.getName());
