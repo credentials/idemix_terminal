@@ -749,6 +749,14 @@ public class IdemixSmartcard {
 			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_CREDENTIALS, 0x00, 0x00));
 	}
 
+	public static ProtocolCommand selectCredentialCommand(short id) {
+		return new ProtocolCommand(
+				"selectcredential",
+				"Select a credential for further modifications",
+				new CommandAPDU(CLA_IDEMIX, INS_SELECT_CREDENTIAL, id >> 8,
+						id & 0xff));
+	}
+
 	public static ProtocolCommands getAttributesCommands(IssuanceSpec spec) {
 		ProtocolCommands commands = new ProtocolCommands();
 		for (AttributeStructure attribute : spec.getCredentialStructure()

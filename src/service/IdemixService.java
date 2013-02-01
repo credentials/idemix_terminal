@@ -393,10 +393,14 @@ implements ProverInterface, RecipientInterface {
     			list.add(id);
     		}
     	}
-    	
+
     	return list;
     }
-    
+
+    public void selectCredential(short id) throws CardServiceException {
+    	execute(IdemixSmartcard.selectCredentialCommand(id));
+    }
+
     public HashMap<String, BigInteger> getAttributes(IssuanceSpec spec)
     throws CardServiceException {
     	HashMap<String, BigInteger> attributes = new HashMap<String, BigInteger>();
