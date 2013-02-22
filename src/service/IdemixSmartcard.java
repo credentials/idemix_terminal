@@ -27,6 +27,10 @@ import java.util.Vector;
 
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.smartcards.ProtocolCommand;
+import net.sourceforge.scuba.smartcards.ProtocolCommands;
+import net.sourceforge.scuba.smartcards.ProtocolErrors;
+import net.sourceforge.scuba.smartcards.ProtocolResponses;
 
 import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
@@ -180,7 +184,6 @@ public class IdemixSmartcard {
     /**
      * INStruction to select a credential on the card.
      */
-    @SuppressWarnings("unused")
 	private static final byte INS_ADMIN_CREDENTIAL = 0x30;
 
     /**
@@ -753,7 +756,7 @@ public class IdemixSmartcard {
 		return new ProtocolCommand(
 				"selectcredential",
 				"Select a credential for further modifications",
-				new CommandAPDU(CLA_IDEMIX, INS_SELECT_CREDENTIAL, id >> 8,
+				new CommandAPDU(CLA_IDEMIX, INS_ADMIN_CREDENTIAL, id >> 8,
 						id & 0xff));
 	}
 

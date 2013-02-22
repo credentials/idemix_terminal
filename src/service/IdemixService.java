@@ -27,6 +27,10 @@ import java.util.Vector;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ProtocolCommand;
+import net.sourceforge.scuba.smartcards.ProtocolCommands;
+import net.sourceforge.scuba.smartcards.ProtocolResponse;
+import net.sourceforge.scuba.smartcards.ProtocolResponses;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.util.Hex;
 
