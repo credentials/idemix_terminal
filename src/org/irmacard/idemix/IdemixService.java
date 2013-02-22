@@ -17,12 +17,11 @@
  * Copyright (C) Pim Vullers, Radboud University Nijmegen, June 2011.
  */
 
-package service;
+package org.irmacard.idemix;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Vector;
-
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;

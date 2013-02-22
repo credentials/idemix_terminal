@@ -14,7 +14,8 @@ import javax.smartcardio.TerminalFactory;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
-import service.IdemixService;
+
+import org.irmacard.idemix.IdemixService;
 
 import com.ibm.zurich.credsystem.utils.Locations;
 import com.ibm.zurich.idmx.showproof.Proof;
