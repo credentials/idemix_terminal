@@ -214,7 +214,6 @@ public class IdemixSmartcard {
     /**
      * INStruction to get the transaction log from the card.
      */
-    @SuppressWarnings("unused")
     private static final byte INS_ADMIN_LOG = 0x36;
 
     /**
@@ -786,6 +785,13 @@ public class IdemixSmartcard {
 			"getcredflags", 
 			"Get credential flags",
 			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_GET_FLAGS, 0, 0));
+	}
+
+	public static ProtocolCommand getLogCommand(byte idx) {
+		return new ProtocolCommand(
+			"getlog",
+			"Get logs",
+			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_LOG, idx, 0));
 	}
 
 	public static ProtocolCommand setCredentialFlagsCommand(short flags) {

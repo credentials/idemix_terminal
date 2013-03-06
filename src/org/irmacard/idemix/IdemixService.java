@@ -460,4 +460,29 @@ implements ProverInterface, RecipientInterface {
     throws CardServiceException {
     	execute(IdemixSmartcard.setCredentialFlagsCommand(flags));
     }
+
+    private final int LOG_SIZE = 30;
+    private final int LOG_ENTRY_SIZE = 16;
+    private final byte LOG_ENTRIES_PER_APDU = 255 / 16;
+    /**
+     * FIXME: make non-interactive via IdemixSmartcard
+     * @throws CardServiceException
+     */
+    public void getLogEntries() throws CardServiceException {
+    	ProtocolResponse response;
+
+		for (byte start_entry = 0; start_entry < LOG_SIZE;
+				start_entry = (byte) (start_entry + LOG_ENTRIES_PER_APDU)) {
+			response = execute(IdemixSmartcard.getLogCommand(start_entry));
+			byte[] data = response.getData();
+			for (int entry = 0; entry < LOG_ENTRIES_PER_APDU
+					&& entry + start_entry < LOG_SIZE; entry++) {
+				for (int idx = 0; idx < LOG_ENTRY_SIZE; idx++) {
+					System.out.print(Hex.byteToHexString(data[LOG_ENTRY_SIZE
+							* entry + idx]));
+				}
+				System.out.println("");
+			}
+		}
+    }
 }
