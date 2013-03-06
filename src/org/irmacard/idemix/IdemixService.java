@@ -227,18 +227,45 @@ implements ProverInterface, RecipientInterface {
     }
 
     /**
-     * Send the pin to the card.
+     * Send the pin to the card. This defaults to the credential pin.
      *
      * @throws CardServiceException if an error occurred.
      */
     public void sendPin(byte[] pin)
     throws CardServiceException {
-        sendPin(IdemixSmartcard.PIN_CRED, pin);
+        sendCredentialPin(pin);
+    }
+
+    /**
+     * Send credential pin to the card. This PIN has to be sent before
+     * new credentials can be issued and before certain credentials can be
+     * read.
+     *
+     * @param pin	ASCII encoded pin
+     * @throws CardServiceException if an error occurred.
+     */
+    public void sendCredentialPin(byte[] pin)
+    throws CardServiceException {
+    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.PIN_CRED, pin));
+    }
+
+    /**
+     * Send card pin to the card. This PIN has to be sent before
+     * any management operations are allowed on the card.
+     *
+     * @param pin	ASCII encoded pin
+     * @throws CardServiceException if an error occurred.
+     */
+    public void sendCardPin(byte[] pin)
+    throws CardServiceException {
+    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.PIN_CARD, pin));
     }
 
     /**
      * Send the pin to the card.
      *
+     * @param pinID	the type of PIN that is send to the card.
+     * @param pin 	ASCII encoded pin
      * @throws CardServiceException if an error occurred.
      */
     public void sendPin(byte pinID, byte[] pin)
