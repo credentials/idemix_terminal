@@ -20,8 +20,12 @@
 package org.irmacard.idemix;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Vector;
+
+import org.irmacard.idemix.util.IdemixLogEntry;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
@@ -468,8 +472,9 @@ implements ProverInterface, RecipientInterface {
      * FIXME: make non-interactive via IdemixSmartcard
      * @throws CardServiceException
      */
-    public void getLogEntries() throws CardServiceException {
+    public List<IdemixLogEntry> getLogEntries() throws CardServiceException {
     	ProtocolResponse response;
+    	Vector<IdemixLogEntry> list = new Vector<IdemixLogEntry>();
 
 		for (byte start_entry = 0; start_entry < LOG_SIZE;
 				start_entry = (byte) (start_entry + LOG_ENTRIES_PER_APDU)) {
@@ -477,12 +482,15 @@ implements ProverInterface, RecipientInterface {
 			byte[] data = response.getData();
 			for (int entry = 0; entry < LOG_ENTRIES_PER_APDU
 					&& entry + start_entry < LOG_SIZE; entry++) {
-				for (int idx = 0; idx < LOG_ENTRY_SIZE; idx++) {
-					System.out.print(Hex.byteToHexString(data[LOG_ENTRY_SIZE
-							* entry + idx]));
-				}
-				System.out.println("");
+
+				byte[] log_entry = Arrays.copyOfRange(data, LOG_ENTRY_SIZE
+						* entry, LOG_ENTRY_SIZE * (entry + 1));
+
+				System.out.println(Hex.bytesToHexString(log_entry));
+				list.add(new IdemixLogEntry(log_entry));
 			}
 		}
+
+		return list;
     }
 }
