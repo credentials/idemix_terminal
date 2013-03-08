@@ -782,10 +782,11 @@ public class IdemixSmartcard {
 	}
 
 	public static ProtocolCommand removeCredentialCommand(short id) {
+		byte[] empty = {};
 		return new ProtocolCommand(
 			"removecredential", 
 			"Remove credential (id " + id + ")", 
-			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_REMOVE, id >> 8, id & 0xff));
+			new CommandAPDU(CLA_IDEMIX, INS_ADMIN_REMOVE, id >> 8, id & 0xff, addTimeStamp(empty)));
 	}
 
 	public static ProtocolCommand getCredentialFlagsCommand() {
