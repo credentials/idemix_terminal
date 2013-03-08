@@ -19,6 +19,10 @@
 
 package org.irmacard.idemix.tests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Date;
 import java.util.List;
 
 import javax.smartcardio.CardException;
@@ -27,14 +31,25 @@ import javax.smartcardio.TerminalFactory;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
-
 import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.util.IdemixLogEntry;
 import org.junit.Test;
 
 public class TestLog {
     public static final byte[] DEFAULT_CARD_PIN = {0x30, 0x30, 0x30, 0x30, 0x30, 0x30};
-	
+
+	public static final byte[] test_input = { 0x51, 0x39, (byte) 0x8b, (byte) 0xb6, 0x00,
+			0x00, 0x00, 0x00, 0x02, 0x00, 0x0A, 0x00, 0x3E, 0x00, 0x00, 0x00 };
+
+    @Test
+    public void parseLog() {
+    	IdemixLogEntry log = new IdemixLogEntry(test_input);
+    	assertTrue((log.getAction() == IdemixLogEntry.Action.VERIFY));
+    	assertEquals(log.getTimestamp().getTime(), (new Date(1362725814000l)).getTime());
+    	assertEquals(log.getCredential(), 10);
+    	assertEquals(log.getDisclose(), 0x3E);
+    }
+
 	@Test
 	public void testRetrieveLog() throws CardException, CardServiceException {
         CardTerminal terminal = TerminalFactory.getDefault().terminals().list().get(0);            
@@ -47,5 +62,4 @@ public class TestLog {
         	l.print();
         }
 	}
-
 }
