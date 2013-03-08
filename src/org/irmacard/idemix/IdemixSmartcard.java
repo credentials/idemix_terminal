@@ -20,7 +20,9 @@
 package org.irmacard.idemix;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -303,6 +305,12 @@ public class IdemixSmartcard {
         return fixed;
     }
 
+    private static byte[] addTimeStamp(byte[] argument) {
+    	int time = (int) ((new Date()).getTime() / 1000);
+		return ByteBuffer.allocate(argument.length + 4).put(argument)
+				.putInt(time).array();
+	}
+
     /**************************************************************************/
     /* Idemix Smart Card commands                                           */
     /**************************************************************************/
@@ -404,7 +412,7 @@ public class IdemixSmartcard {
     					"Start credential issuance.",
     					new CommandAPDU(
     			        		CLA_IDEMIX, INS_ISSUE_CREDENTIAL, id >> 8, id & 0xff,
-    			        		fixLength(spec.getContext(), l_H)),
+    			        		addTimeStamp(fixLength(spec.getContext(), l_H))),
     			        new ProtocolErrors(
     			        		0x00006986,"Credential already issued."));
     }
@@ -425,7 +433,7 @@ public class IdemixSmartcard {
     					"Start credential proof.",
     					new CommandAPDU(
     			        		CLA_IDEMIX, INS_PROVE_CREDENTIAL, id >> 8, id & 0xff,
-    			        		fixLength(spec.getContext(), l_H)),
+    			        		addTimeStamp(fixLength(spec.getContext(), l_H))),
     			        new ProtocolErrors(
     			        		0x00006A88,"Credential not found."));
     }
