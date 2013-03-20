@@ -156,7 +156,12 @@ implements ProverInterface, RecipientInterface {
         return rapdu;
     }
 
-    /**
+	public byte[] transmitControlCommand(int controlCode, byte[] command)
+	throws CardServiceException {
+		return service.transmitControlCommand(controlCode, command);
+	}
+
+	/**
      * Close the communication channel with the Idemix applet.
      */
     public void close() {
@@ -170,6 +175,10 @@ implements ProverInterface, RecipientInterface {
 		return service.getATR();
 	}
 
+	public String getName() {
+		return "Idemix: " + service.getName();
+	}
+	
     /**
      * Execute a protocol command on the smart card.
      * 
