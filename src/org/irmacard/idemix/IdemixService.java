@@ -117,7 +117,7 @@ implements ProverInterface, RecipientInterface {
         if (!isOpen()) {
             service.open();
         }
-        selectApplet();
+        selectApplication();
     }
 
     /**
@@ -225,9 +225,9 @@ implements ProverInterface, RecipientInterface {
      * 
      * @throws CardServiceException if an error occurred.
      */
-    public void selectApplet() 
+    public void selectApplication() 
     throws CardServiceException {
-    	execute(IdemixSmartcard.selectAppletCommand);
+    	execute(IdemixSmartcard.selectApplicationCommand);
     }
 
     /**
@@ -283,9 +283,9 @@ implements ProverInterface, RecipientInterface {
 	 * Note that to use this function one first needs to establish an
 	 * authenticated connection to the card.
 	 */
-    public void updatePin(byte[] pin)
+    public void updatePin(byte[] oldPin, byte[] newPin)
     throws CardServiceException {
-    	updatePin(IdemixSmartcard.PIN_CRED, pin);
+    	updatePin(IdemixSmartcard.PIN_CRED, oldPin, newPin);
     }
 
     /**
@@ -294,9 +294,9 @@ implements ProverInterface, RecipientInterface {
 	 * Note that to use this function one first needs to establish an
 	 * authenticated connection to the card.
 	 */
-    public void updatePin(byte pinID, byte[] pin)
+    public void updatePin(byte pinID, byte[] oldPin, byte[] newPin)
     throws CardServiceException {
-    	execute(IdemixSmartcard.updatePinCommand(pinID, pin));
+    	execute(IdemixSmartcard.updatePinCommand(pinID, oldPin, newPin));
     }
 
     /**
