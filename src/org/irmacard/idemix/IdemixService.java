@@ -195,7 +195,8 @@ implements ProverInterface, RecipientInterface {
     		throw new CardServiceException(String.format(
     				"Command failed: \"%s\", SW: %04x (%s)",
     				command.getDescription(), response.getSW(), 
-    				command.getErrorMessage(response.getSW())));
+    				command.getErrorMessage(response.getSW())),
+    				response.getSW());
     	}
     	
     	return new ProtocolResponse(command.getKey(), response);
@@ -257,9 +258,19 @@ implements ProverInterface, RecipientInterface {
      * @param pin	ASCII encoded pin
      * @throws CardServiceException if an error occurred.
      */
-    public void sendCredentialPin(byte[] pin)
+    public int sendCredentialPin(byte[] pin)
     throws CardServiceException {
-    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.P2_PIN_ATTRIBUTE, pin));
+    	try {
+    		execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.P2_PIN_ATTRIBUTE, pin));
+    	} catch (CardServiceException e) {
+    		if (!e.getMessage().toUpperCase().contains("63C")) {
+    			throw e;
+    		}
+    		
+    		return e.getSW() - 0x000063C0;
+    	}
+    	
+    	return -1;
     }
 
     /**
