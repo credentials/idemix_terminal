@@ -259,7 +259,7 @@ implements ProverInterface, RecipientInterface {
      */
     public void sendCredentialPin(byte[] pin)
     throws CardServiceException {
-    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.PIN_CRED, pin));
+    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.P2_PIN_ATTRIBUTE, pin));
     }
 
     /**
@@ -271,7 +271,7 @@ implements ProverInterface, RecipientInterface {
      */
     public void sendCardPin(byte[] pin)
     throws CardServiceException {
-    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.PIN_CARD, pin));
+    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.P2_PIN_ADMIN, pin));
     }
 
     /**
@@ -294,7 +294,7 @@ implements ProverInterface, RecipientInterface {
 	 */
     public void updatePin(byte[] oldPin, byte[] newPin)
     throws CardServiceException {
-    	updatePin(IdemixSmartcard.PIN_CRED, oldPin, newPin);
+    	updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, oldPin, newPin);
     }
 
     /**
