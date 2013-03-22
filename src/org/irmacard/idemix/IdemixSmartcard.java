@@ -119,14 +119,14 @@ public class IdemixSmartcard {
     private static final byte P1_PUBLIC_KEY_N = 0x00;
 
     /**
-     * P1 parameter to issue the z value from the issuer public key.
-     */
-    private static final byte P1_PUBLIC_KEY_Z = 0x01;
-
-    /**
      * P1 parameter to issue the s value from the issuer public key.
      */
-    private static final byte P1_PUBLIC_KEY_S = 0x02;
+    private static final byte P1_PUBLIC_KEY_S = 0x01;
+
+    /**
+     * P1 parameter to issue the z value from the issuer public key.
+     */
+    private static final byte P1_PUBLIC_KEY_Z = 0x02;
 
     /**
      * P1 parameter to issue the R values from the issuer public key.
@@ -411,11 +411,12 @@ public class IdemixSmartcard {
     public static ProtocolCommand startIssuanceCommand(IssuanceSpec spec, short id) {
     	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
 
-    	byte[] data = new byte[2 + l_H + 1];
+    	byte[] data = new byte[2 + l_H/8 + 2];
     	data[0] = (byte) (id >> 8);
     	data[1] = (byte) (id & 0xff);
-    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H);
-    	data[l_H + 2] = (byte) spec.getCredentialStructure().getAttributeStructs().size();
+    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
+    	data[l_H/8 + 2] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() >> 8);
+    	data[l_H/8 + 3] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() & 0xff);
     	
     	return new ProtocolCommand(
     					"start_issuance",
@@ -436,12 +437,12 @@ public class IdemixSmartcard {
     public static ProtocolCommand startProofCommand(ProofSpec spec, short id, short D) {
     	int l_H = spec.getGroupParams().getSystemParams().getL_H();
 
-    	byte[] data = new byte[2 + l_H + 2];
+    	byte[] data = new byte[2 + l_H/8 + 2];
     	data[0] = (byte) (id >> 8);
     	data[1] = (byte) (id & 0xff);
-    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H);
-    	data[l_H + 2] = (byte) (D >> 8);
-    	data[l_H + 3] = (byte) (D & 0xff);
+    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
+    	data[l_H/8 + 2] = (byte) (D >> 8);
+    	data[l_H/8 + 3] = (byte) (D & 0xff);
     	 
     	return
     			new ProtocolCommand(
@@ -495,7 +496,7 @@ public class IdemixSmartcard {
     					"sendpin",
     					"Authorize using PIN",
     					new CommandAPDU(
-    			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, pinID, 0x00, pinBytes)
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, pinID, pinBytes)
     					);
     }
 
@@ -509,7 +510,7 @@ public class IdemixSmartcard {
     					"updatepin",
     					"Update current PIN",
     					new CommandAPDU(
-    			        		ISO7816.CLA_ISO7816, ISO7816.INS_CHANGE_CHV, pinID, 0x00, pinBytes)
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_CHANGE_CHV, 0x00, pinID, pinBytes)
     					);
 	}
 
