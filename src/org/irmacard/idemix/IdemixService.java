@@ -305,10 +305,11 @@ implements ProverInterface, RecipientInterface {
 	 *
 	 * Note that to use this function one first needs to establish an
 	 * authenticated connection to the card.
+	 * @return Number of tries left, or -1 in case of success
 	 */
-    public void updatePin(byte[] oldPin, byte[] newPin)
+    public int updatePin(byte[] oldPin, byte[] newPin)
     throws CardServiceException {
-    	updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, oldPin, newPin);
+    	return updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, oldPin, newPin);
     }
 
     /**
@@ -316,10 +317,21 @@ implements ProverInterface, RecipientInterface {
 	 *
 	 * Note that to use this function one first needs to establish an
 	 * authenticated connection to the card.
+	 * @return Number of tries left, or -1 in case of success
 	 */
-    public void updatePin(byte pinID, byte[] oldPin, byte[] newPin)
+    public int updatePin(byte pinID, byte[] oldPin, byte[] newPin)
     throws CardServiceException {
-    	execute(IdemixSmartcard.updatePinCommand(pinID, oldPin, newPin));
+    	try {
+    		execute(IdemixSmartcard.updatePinCommand(pinID, oldPin, newPin));
+    	} catch (CardServiceException e) {
+    		if (!e.getMessage().toUpperCase().contains("63C")) {
+    			throw e;
+    		}
+
+    		return e.getSW() - 0x000063C0;
+    	}
+
+    	return -1;
     }
 
     /**
@@ -327,10 +339,11 @@ implements ProverInterface, RecipientInterface {
 	 *
 	 * Note that to use this function one first needs to establish an
 	 * authenticated connection to the card.
+	 * @return Number of tries left, or -1 in case of success
 	 */
-	public void updateCardPin(byte[] oldPin, byte[] newPin)
+	public int updateCardPin(byte[] oldPin, byte[] newPin)
 			throws CardServiceException {
-		updatePin(IdemixSmartcard.P2_PIN_ADMIN, oldPin, newPin);
+		return updatePin(IdemixSmartcard.P2_PIN_ADMIN, oldPin, newPin);
 	}
 
     /**
@@ -338,10 +351,11 @@ implements ProverInterface, RecipientInterface {
 	 *
 	 * Note that to use this function one first needs to establish an
 	 * authenticated connection to the card.
+	 * @return Number of tries left, or -1 in case of success
 	 */
-	public void updateCredentialPin(byte[] oldPin, byte[] newPin)
+	public int updateCredentialPin(byte[] oldPin, byte[] newPin)
 			throws CardServiceException {
-		updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, oldPin, newPin);
+		return updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, oldPin, newPin);
 	}
 
     /**
