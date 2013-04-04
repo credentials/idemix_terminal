@@ -256,21 +256,12 @@ implements ProverInterface, RecipientInterface {
      * read.
      *
      * @param pin	ASCII encoded pin
+     * @return Number of tries left, or -1 in case of success
      * @throws CardServiceException if an error occurred.
      */
     public int sendCredentialPin(byte[] pin)
     throws CardServiceException {
-    	try {
-    		execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.P2_PIN_ATTRIBUTE, pin));
-    	} catch (CardServiceException e) {
-    		if (!e.getMessage().toUpperCase().contains("63C")) {
-    			throw e;
-    		}
-    		
-    		return e.getSW() - 0x000063C0;
-    	}
-    	
-    	return -1;
+    	return sendPin(IdemixSmartcard.P2_PIN_ATTRIBUTE, pin);
     }
 
     /**
@@ -278,11 +269,12 @@ implements ProverInterface, RecipientInterface {
      * any management operations are allowed on the card.
      *
      * @param pin	ASCII encoded pin
+     * @return Number of tries left, or -1 in case of success
      * @throws CardServiceException if an error occurred.
      */
-    public void sendCardPin(byte[] pin)
+    public int sendCardPin(byte[] pin)
     throws CardServiceException {
-    	execute(IdemixSmartcard.sendPinCommand(IdemixSmartcard.P2_PIN_ADMIN, pin));
+    	return sendPin(IdemixSmartcard.P2_PIN_ADMIN, pin);
     }
 
     /**
@@ -290,11 +282,22 @@ implements ProverInterface, RecipientInterface {
      *
      * @param pinID	the type of PIN that is send to the card.
      * @param pin 	ASCII encoded pin
+     * @return Number of tries left, or -1 in case of success
      * @throws CardServiceException if an error occurred.
      */
-    public void sendPin(byte pinID, byte[] pin)
+    public int sendPin(byte pinID, byte[] pin)
     throws CardServiceException {
-        execute(IdemixSmartcard.sendPinCommand(pinID, pin));
+    	try {
+    		execute(IdemixSmartcard.sendPinCommand(pinID, pin));
+    	} catch (CardServiceException e) {
+    		if (!e.getMessage().toUpperCase().contains("63C")) {
+    			throw e;
+    		}
+
+    		return e.getSW() - 0x000063C0;
+    	}
+    	
+    	return -1;
     }
     
     /**
