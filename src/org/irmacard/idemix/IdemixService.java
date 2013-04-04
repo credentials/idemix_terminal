@@ -320,6 +320,28 @@ implements ProverInterface, RecipientInterface {
     }
 
     /**
+	 * Update the card-pin on the card
+	 *
+	 * Note that to use this function one first needs to establish an
+	 * authenticated connection to the card.
+	 */
+	public void updateCardPin(byte[] oldPin, byte[] newPin)
+			throws CardServiceException {
+		updatePin(IdemixSmartcard.P2_PIN_ADMIN, oldPin, newPin);
+	}
+
+    /**
+	 * Update the credential-pin on the card
+	 *
+	 * Note that to use this function one first needs to establish an
+	 * authenticated connection to the card.
+	 */
+	public void updateCredentialPin(byte[] oldPin, byte[] newPin)
+			throws CardServiceException {
+		updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, oldPin, newPin);
+	}
+
+    /**
      * Generate the master secret: 
      * 
      * <pre>
