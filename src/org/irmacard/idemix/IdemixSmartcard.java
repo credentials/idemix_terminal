@@ -447,7 +447,7 @@ public class IdemixSmartcard {
     					"start_issuance",
     					"Start credential issuance.",
     					new CommandAPDU(
-    			        		CLA_IRMACARD, INS_ISSUE_CREDENTIAL, 0x00, 0x00, data),
+    			        		CLA_IRMACARD, INS_ISSUE_CREDENTIAL, 0x00, 0x00, addTimeStamp(data)),
     			        new ProtocolErrors(
     			        		0x00006986,"Credential already issued."));
     }
@@ -474,7 +474,7 @@ public class IdemixSmartcard {
     					"startprove",
     					"Start credential proof.",
     					new CommandAPDU(
-    			        		CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00, data),
+    			        		CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00, addTimeStamp(data)),
     			        new ProtocolErrors(
     			        		0x00006A88,"Credential not found."));
     }
