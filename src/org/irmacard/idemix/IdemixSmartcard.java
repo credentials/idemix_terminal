@@ -436,13 +436,18 @@ public class IdemixSmartcard {
     public static ProtocolCommand startIssuanceCommand(IssuanceSpec spec, short id) {
     	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
 
-    	byte[] data = new byte[2 + l_H/8 + 2];
+    	// FIXME: flags set to 0 for now
+    	int flags = 0;
+
+    	byte[] data = new byte[2 + l_H/8 + 2 + 2];
     	data[0] = (byte) (id >> 8);
     	data[1] = (byte) (id & 0xff);
     	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
     	data[l_H/8 + 2] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() >> 8);
     	data[l_H/8 + 3] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() & 0xff);
-    	
+    	data[l_H/8 + 4] = (byte) (flags >> 8);
+    	data[l_H/8 + 5] = (byte) (flags & 0xff);
+
     	return new ProtocolCommand(
     					"start_issuance",
     					"Start credential issuance.",
