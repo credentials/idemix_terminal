@@ -82,6 +82,11 @@ implements ProverInterface, RecipientInterface {
 	 */
 	protected short credentialId;
 	
+	/**
+	 * Card Version, this is read when the applet is selected
+	 */
+	protected byte[] cardVersion = null;
+
 	
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
@@ -117,7 +122,7 @@ implements ProverInterface, RecipientInterface {
         if (!isOpen()) {
             service.open();
         }
-        selectApplication();
+        cardVersion = selectApplication();
     }
 
     /**
@@ -235,9 +240,10 @@ implements ProverInterface, RecipientInterface {
      * 
      * @throws CardServiceException if an error occurred.
      */
-    public void selectApplication() 
+    public byte[] selectApplication()
     throws CardServiceException {
-    	execute(IdemixSmartcard.selectApplicationCommand);
+    	ProtocolResponse response = execute(IdemixSmartcard.selectApplicationCommand);
+    	return response.getData();
     }
 
     /**
@@ -551,5 +557,9 @@ implements ProverInterface, RecipientInterface {
 		}
 
 		return list;
+    }
+
+    public byte[] getCardVersion() {
+    	return cardVersion;
     }
 }
