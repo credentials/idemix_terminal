@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
+import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
 
 import net.sourceforge.scuba.smartcards.CardService;
@@ -518,14 +519,13 @@ implements ProverInterface, RecipientInterface {
     	execute(IdemixSmartcard.removeCredentialCommand(id));
     }
     
-    public short getCredentialFlags()
+    public IdemixFlags getCredentialFlags()
     throws CardServiceException {
     	ProtocolResponse response = execute(IdemixSmartcard.getCredentialFlagsCommand());
-    	byte[] data = response.getData();
-    	return (short) ((data[0] << 8) | data[1]);
+    	return new IdemixFlags(response.getData());
     }
     
-    public void setCredentialFlags(short flags)
+    public void setCredentialFlags(IdemixFlags flags)
     throws CardServiceException {
     	execute(IdemixSmartcard.setCredentialFlagsCommand(flags));
     }

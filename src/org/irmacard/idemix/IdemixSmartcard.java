@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import org.irmacard.idemix.util.IdemixFlags;
+
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.ProtocolCommand;
@@ -437,16 +439,16 @@ public class IdemixSmartcard {
     	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
 
     	// FIXME: flags set to 0 for now
-    	int flags = 0;
+    	IdemixFlags flags = new IdemixFlags();
+    	byte[] flagBytes = flags.getFlagBytes();
 
-    	byte[] data = new byte[2 + l_H/8 + 2 + 2];
+    	byte[] data = new byte[2 + l_H/8 + 2 + flagBytes.length];
     	data[0] = (byte) (id >> 8);
     	data[1] = (byte) (id & 0xff);
     	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
     	data[l_H/8 + 2] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() >> 8);
     	data[l_H/8 + 3] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() & 0xff);
-    	data[l_H/8 + 4] = (byte) (flags >> 8);
-    	data[l_H/8 + 5] = (byte) (flags & 0xff);
+    	System.arraycopy(flagBytes, 0, data, l_H/8 + 4, flagBytes.length);
 
     	return new ProtocolCommand(
     					"start_issuance",
@@ -860,14 +862,10 @@ public class IdemixSmartcard {
 			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_LOG, idx, 0));
 	}
 
-	public static ProtocolCommand setCredentialFlagsCommand(short flags) {
-		byte[] data = new byte[2];
-		data[0] = (byte) (flags >> 8);
-		data[1] = (byte) (flags & 0xff);
-		
+	public static ProtocolCommand setCredentialFlagsCommand(IdemixFlags flags) {
 		return new ProtocolCommand(
 			"setcredflags", 
 			"Set credential flags (" + flags + ")", 
-			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_FLAGS, 0,0, data));
+			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_FLAGS, 0,0, flags.getFlagBytes()));
 	}
 }
