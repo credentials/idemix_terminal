@@ -488,7 +488,7 @@ implements ProverInterface, RecipientInterface {
     	byte[] data = response.getData();
     	
     	for (int i = 0; i < data.length; i = i+2) {
-    		int id = ((data[i] & 0xff) << 8) | data[i + 1];
+    		int id = ((data[i] & 0xff) << 8) | (data[i + 1] & 0xff);
     		if (id != 0) {
     			list.add(id);
     		}
