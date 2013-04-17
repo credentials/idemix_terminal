@@ -129,7 +129,7 @@ public class IdemixLogEntry {
 	}
 
 	private static short getShortAt(byte[] array, int idx) {
-		return (short) ((array[idx] << 8) + array[idx + 1]);
+		return (short) ((array[idx] << 8) + (array[idx + 1] & 0xff));
 	}
 	
 	public void print() {
