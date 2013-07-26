@@ -21,7 +21,10 @@ package org.irmacard.idemix;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -84,6 +87,11 @@ public class IdemixSmartcard {
      * CLAss to be used for IRMA APDUs.
      */
     private static final byte CLA_IRMACARD = (byte) 0x80;
+
+    /**
+     * CLAss mask to indicate command chaining.
+     */
+    private static final byte CLA_COMMAND_CHAINING = 0x10;
 
     /**
      * INStruction to generate the master secret on the card.
@@ -439,24 +447,25 @@ public class IdemixSmartcard {
     	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
 
     	// FIXME: flags set to 0 for now
-    	IdemixFlags flags = new IdemixFlags();
-    	byte[] flagBytes = flags.getFlagBytes();
+        IdemixFlags flags = new IdemixFlags();
+        byte[] flagBytes = flags.getFlagBytes();
 
-    	byte[] data = new byte[2 + l_H/8 + 2 + flagBytes.length];
-    	data[0] = (byte) (id >> 8);
-    	data[1] = (byte) (id & 0xff);
-    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
-    	data[l_H/8 + 2] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() >> 8);
-    	data[l_H/8 + 3] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() & 0xff);
-    	System.arraycopy(flagBytes, 0, data, l_H/8 + 4, flagBytes.length);
+        byte[] data = new byte[4 + flagBytes.length + l_H/8];
+        data[0] = (byte) (id >> 8);
+        data[1] = (byte) (id & 0x00ff);
+        data[2] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() >> 8);
+        data[3] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() & 0xff);
+        System.arraycopy(flagBytes, 0, data, 4, flagBytes.length);
+        System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 4 + flagBytes.length, l_H/8);
+        data = addTimeStamp(data);
 
     	return new ProtocolCommand(
-    					"start_issuance",
-    					"Start credential issuance.",
-    					new CommandAPDU(
-    			        		CLA_IRMACARD, INS_ISSUE_CREDENTIAL, 0x00, 0x00, addTimeStamp(data)),
+                                "start_issuance",
+                                "Start credential issuance.",
+                                new CommandAPDU(
+                                    CLA_IRMACARD, INS_ISSUE_CREDENTIAL, 0x00, 0x00, data),
     			        new ProtocolErrors(
-    			        		0x00006986,"Credential already issued."));
+                                    0x00006986,"Credential already issued."));
     }
 
     /**
@@ -469,24 +478,22 @@ public class IdemixSmartcard {
     public static ProtocolCommand startProofCommand(ProofSpec spec, short id, short D) {
     	int l_H = spec.getGroupParams().getSystemParams().getL_H();
 
-    	byte[] data = new byte[2 + l_H/8 + 2];
-    	data[0] = (byte) (id >> 8);
-    	data[1] = (byte) (id & 0xff);
-    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
-    	data[l_H/8 + 2] = (byte) (D >> 8);
-    	data[l_H/8 + 3] = (byte) (D & 0xff);
-    	 
-    	return
-    			new ProtocolCommand(
-    					"startprove",
-    					"Start credential proof.",
-    					new CommandAPDU(
-    			        		CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00, addTimeStamp(data)),
+        byte[] data = new byte[4 + l_H/8];
+        data[0] = (byte) (id >> 8);
+        data[1] = (byte) (id & 0xff);
+        data[2] = (byte) (D >> 8);
+        data[3] = (byte) (D & 0xff);
+        System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 4, l_H/8);
+        data = addTimeStamp(data);
+
+        return new ProtocolCommand(
+                                "startprove",
+                                "Start credential proof.",
+                                new CommandAPDU(
+                                    CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00, data),
     			        new ProtocolErrors(
-    			        		0x00006A88,"Credential not found."));
+                                    0x00006A88,"Credential not found."));
     }
-
-
 
     public static ProtocolCommand generateMasterSecretCommand =
     			new ProtocolCommand(
@@ -845,7 +852,7 @@ public class IdemixSmartcard {
 		return new ProtocolCommand(
 			"removecredential", 
 			"Remove credential (id " + id + ")", 
-			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, id >> 8, id & 0xff, addTimeStamp(empty)));
+			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, id >> 8, id & 0x00ff, addTimeStamp(empty)));
 	}
 
 	public static ProtocolCommand getCredentialFlagsCommand() {
@@ -867,5 +874,35 @@ public class IdemixSmartcard {
 			"setcredflags", 
 			"Set credential flags (" + flags + ")", 
 			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_FLAGS, 0,0, flags.getFlagBytes()));
+	}
+
+	public static ProtocolCommands verifyCertificateCommands(Certificate cert) throws CertificateEncodingException {
+		ProtocolCommands commands = new ProtocolCommands();
+		byte[] certBytes = cert.getEncoded();
+
+		for (int offset = 0; offset < certBytes.length - 1; offset += 255) {
+			commands.add(new ProtocolCommand(
+				"cert_" + offset,
+				"Verify certificate (@offset " + offset + ")",
+				new CommandAPDU(ISO7816.CLA_ISO7816 | ((offset + 255 < certBytes.length - 1) ? CLA_COMMAND_CHAINING : 0x00), ISO7816.INS_PSO, 0x00, 0xBE, Arrays.copyOfRange(certBytes, offset, Math.min(offset + 255, certBytes.length)))));
+		}
+
+		return commands;
+	}
+
+	public static ProtocolCommands setCAKeyCommands(RSAPublicKey caKey) {
+		ProtocolCommands commands = new ProtocolCommands();
+
+		commands.add(new ProtocolCommand(
+				"caExp",
+				"Set CA public key exponent",
+				new CommandAPDU(CLA_IRMACARD, INS_AUTHENTICATION_SECRET, 2, 0, fixLength(caKey.getPublicExponent(), 1024))));
+
+		commands.add(new ProtocolCommand(
+				"caMod",
+				"Set CA public key modulus",
+				new CommandAPDU(CLA_IRMACARD, INS_AUTHENTICATION_SECRET, 3, 0, fixLength(caKey.getModulus(), 1024))));
+
+		return commands;
 	}
 }
