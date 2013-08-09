@@ -141,10 +141,9 @@ public class IdemixSmartcard {
     private static final byte INS_ISSUE_SIGNATURE = 0x1D;
 
     /**
-     * INStruction to send the zero-knowledge proof for correct construction of
-     * the signature (s_e, c').
+     * INStruction to verify the signature and the zero-knowledge proof.
      */
-    private static final byte INS_ISSUE_SIGNATURE_PROOF = 0x1E;
+    private static final byte INS_ISSUE_VERIFY = 0x1F;
 
     /**
      * INStruction to start proving attributes from a credential (and to set
@@ -220,11 +219,6 @@ public class IdemixSmartcard {
     private static final byte P1_PUBLIC_KEY_R = 0x03;
 
     /**
-     * P1 parameter for the verification of a signature.
-     */
-    private static final byte P1_SIGNATURE_VERIFY = 0x00;
-    
-    /**
      * P1 parameter for the A value from a signature.
      */
     private static final byte P1_SIGNATURE_A = 0x01;
@@ -240,9 +234,15 @@ public class IdemixSmartcard {
     private static final byte P1_SIGNATURE_V = 0x03;
 
     /**
-     * P1 parameter for verification of a proof.
+     * P1 parameter for the challenge of a proof.
      */
-    private static final byte P1_PROOF_VERIFY = 0x00;
+    private static final byte P1_SIGNATURE_PROOF_C = 0x04;
+
+    /**
+     * P1 parameter for the s_e response of a proof.
+     */
+    private static final byte P1_SIGNATURE_PROOF_S_E = 0x05;
+
     /**
      * P1 parameter for the challenge of a proof.
      */
@@ -257,11 +257,6 @@ public class IdemixSmartcard {
      * P1 parameter for the sHat response of a proof.
      */
     private static final byte P1_PROOF_SHAT = 0x03;
-
-    /**
-     * P1 parameter for the s_e response of a proof.
-     */
-    private static final byte P1_PROOF_S_E = 0x04;
 
     /**
      * P1 parameter for the modulus of an RSA key.
@@ -677,21 +672,15 @@ public class IdemixSmartcard {
     					"vPrimePrime",
     					"Issue signature v''",
     					new CommandAPDU(
-    		            		CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_V, 0x00,
+    							CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_V, 0x00,
     		                    fixLength(v, sysPars.getL_v()))));
-    	commands.add(
-    			new ProtocolCommand(
-    					"verify",
-    					"Verify issued signature",
-    					new CommandAPDU(
-    		            		CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_VERIFY, 0x00)));
     	BigInteger c = msg.getProof().getChallenge();
     	commands.add(
     			new ProtocolCommand(
     					"proof_c",
     					"Issue proof c'",
     					new CommandAPDU(
-    		            		CLA_IRMACARD, INS_ISSUE_SIGNATURE_PROOF, P1_PROOF_C, 0x00,
+                                CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_PROOF_C, 0x00,
     		                    fixLength(c, sysPars.getL_H()))));
     	BigInteger s_e =
         		(BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
@@ -700,14 +689,14 @@ public class IdemixSmartcard {
     					"proof_s_e",
     					"Issue proof s_e",
     					new CommandAPDU(
-    		            		CLA_IRMACARD, INS_ISSUE_SIGNATURE_PROOF, P1_PROOF_S_E, 0x00,
+                                CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_PROOF_S_E, 0x00,
     		                    fixLength(s_e, sysPars.getL_n()))));
     	commands.add(
     			new ProtocolCommand(
-    					"proof_verify",
-    					"Verify proof",
+    					"issue_verify",
+    					"Verify issuance results (signature & proof)",
     					new CommandAPDU(
-    		            		CLA_IRMACARD, INS_ISSUE_SIGNATURE_PROOF, P1_PROOF_VERIFY, 0x00)));
+    		            		CLA_IRMACARD, INS_ISSUE_VERIFY, 0x00, 0x00)));
     	return commands;
     }
 
