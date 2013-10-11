@@ -387,6 +387,28 @@ public class IdemixSmartcard {
     	return commands;
     }
 
+    /**
+     * Get the APDU commands for setting the specification of
+     * a certificate issuance:
+     * <ul>
+     *   <li> issuer public key, and
+     *   <li> context.
+     * </ul>
+     *
+     * @param spec the specification to be set
+     * @param id
+     * @return
+     */
+    public static ProtocolCommands setIssuanceSpecificationCommands_0_7(IssuanceSpec spec, short id) {
+    	ProtocolCommands commands = new ProtocolCommands();
+
+    	commands.add(startIssuanceCommand_0_7(spec, id));
+
+    	commands.addAll(setPublicKeyCommands(
+    				spec.getPublicKey(),
+    				spec.getCredentialStructure().getAttributeStructs().size() + 1));
+    	return commands;
+    }
 
     /**
      * Get the APDU commands for setting the public key on
@@ -471,6 +493,37 @@ public class IdemixSmartcard {
     }
 
     /**
+     * Get the APDU commands to start issuance. (0.7 version)
+     *
+     * @param spec Issuance specification
+     * @param id id of credential
+     * @return
+     */
+    public static ProtocolCommand startIssuanceCommand_0_7(IssuanceSpec spec, short id) {
+    	int l_H = spec.getPublicKey().getGroupParams().getSystemParams().getL_H();
+
+    	// FIXME: flags set to 0 for now
+    	IdemixFlags flags = new IdemixFlags();
+    	byte[] flagBytes = flags.getFlagBytes();
+
+    	byte[] data = new byte[2 + l_H/8 + 2 + flagBytes.length];
+    	data[0] = (byte) (id >> 8);
+    	data[1] = (byte) (id & 0xff);
+    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
+    	data[l_H/8 + 2] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() >> 8);
+    	data[l_H/8 + 3] = (byte) (spec.getCredentialStructure().getAttributeStructs().size() & 0xff);
+    	System.arraycopy(flagBytes, 0, data, l_H/8 + 4, flagBytes.length);
+
+    	return new ProtocolCommand(
+    					"start_issuance",
+    					"Start credential issuance.",
+    					new CommandAPDU(
+    			        		CLA_IRMACARD, INS_ISSUE_CREDENTIAL, 0x00, 0x00, addTimeStamp(data)),
+    			        new ProtocolErrors(
+    			        		0x00006986,"Credential already issued."));
+    }
+
+    /**
      * Get the APDU commands to start proof.
      *
      * @param spec Proof specification
@@ -495,6 +548,33 @@ public class IdemixSmartcard {
                                     CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00, data),
     			        new ProtocolErrors(
                                     0x00006A88,"Credential not found."));
+    }
+
+    /**
+     * Get the APDU commands to start proof. (0.7 version)
+     *
+     * @param spec Proof specification
+     * @param id id of credential
+     * @return
+     */
+    public static ProtocolCommand startProofCommand_0_7(ProofSpec spec, short id, short D) {
+    	int l_H = spec.getGroupParams().getSystemParams().getL_H();
+
+    	byte[] data = new byte[2 + l_H/8 + 2];
+    	data[0] = (byte) (id >> 8);
+    	data[1] = (byte) (id & 0xff);
+    	System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
+    	data[l_H/8 + 2] = (byte) (D >> 8);
+    	data[l_H/8 + 3] = (byte) (D & 0xff);
+    	 
+    	return
+    			new ProtocolCommand(
+    					"startprove",
+    					"Start credential proof.",
+    					new CommandAPDU(
+    			        		CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00, addTimeStamp(data)),
+    			        new ProtocolErrors(
+    			        		0x00006A88,"Credential not found."));
     }
 
     public static ProtocolCommand generateMasterSecretCommand =
@@ -743,6 +823,71 @@ public class IdemixSmartcard {
 
         commands.add(
         		startProofCommand(spec, id, D));
+        commands.add(
+        		new ProtocolCommand(
+        				"challenge_c",
+        				"Send challenge n1",
+        				new CommandAPDU(CLA_IRMACARD, INS_PROVE_COMMITMENT, 0x00, 0x00,
+        	                    fixLength(nonce, sysPars.getL_Phi()))));
+        commands.add(
+        		new ProtocolCommand(
+        				"signature_A",
+        				"Get random signature A",
+        				new CommandAPDU(CLA_IRMACARD, INS_PROVE_SIGNATURE, P1_SIGNATURE_A, 0x00)));
+        commands.add(
+        		new ProtocolCommand(
+        				"signature_e",
+        				"Get random signature e^",
+        				new CommandAPDU(CLA_IRMACARD, INS_PROVE_SIGNATURE, P1_SIGNATURE_E, 0x00)));
+        commands.add(
+        		new ProtocolCommand(
+        				"signature_v",
+        				"Get random signature v^",
+            				new CommandAPDU(CLA_IRMACARD, INS_PROVE_SIGNATURE, P1_SIGNATURE_V, 0x00)));
+        commands.add(
+        		new ProtocolCommand(
+        				"master",
+        				"Get random value (@index 0).",
+        				new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, 0x00, 0x00)));
+
+        // iterate over all the identifiers
+        for (AttributeStructure attribute : cred.getAttributeStructs()) {
+            String attName = attribute.getName();
+            Identifier identifier = pred.getIdentifier(attName);
+            int i = attribute.getKeyIndex();
+        	commands.add(
+            		new ProtocolCommand(
+            				"attr_"+attName,
+            				(identifier.isRevealed() ? "Get disclosed attribute" : "Get random value") + " (@index " + i + ").",
+            				new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, i, 0x00)));
+        }
+    	return commands;
+    }
+
+    public static ProtocolCommands buildProofCommands_0_7(final BigInteger nonce, final ProofSpec spec, short id) {
+    	ProtocolCommands commands = new ProtocolCommands();
+        // Set the system parameters
+    	SystemParameters sysPars = spec.getGroupParams().getSystemParams();
+
+        Predicate predicate = spec.getPredicates().firstElement();
+        if (predicate.getPredicateType() != PredicateType.CL) {
+            throw new RuntimeException("Unimplemented predicate.");
+        }
+        CLPredicate pred = ((CLPredicate) predicate);
+        CredentialStructure cred = (CredentialStructure) 
+        		StructureStore.getInstance().get(pred.getCredStructLocation());
+
+        // Determine the disclosure selection bitmask
+        short D = 0;
+        for (AttributeStructure attribute : cred.getAttributeStructs()) {
+            Identifier identifier = pred.getIdentifier(attribute.getName());
+            if (identifier.isRevealed()) {
+            	D |= 1 << attribute.getKeyIndex();
+            }
+        }
+
+        commands.add(
+        		startProofCommand_0_7(spec, id, D));
         commands.add(
         		new ProtocolCommand(
         				"challenge_c",

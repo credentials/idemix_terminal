@@ -509,9 +509,16 @@ implements ProverInterface, RecipientInterface {
      */
     public Proof buildProof(final BigInteger nonce, final ProofSpec spec) {
         // Hide CardServiceExceptions, instead return null on failure
-        try {            
-            ProtocolCommands commands = IdemixSmartcard.buildProofCommands(
+        try {
+        	ProtocolCommands commands;
+        
+            if (cardVersion.older(new CardVersion(0,8))) {
+            	commands = IdemixSmartcard.buildProofCommands_0_7(
                     nonce, spec, credentialId);
+            } else {
+            	commands = IdemixSmartcard.buildProofCommands(
+                    nonce, spec, credentialId);
+            }
             ProtocolResponses responses = execute(commands);
             return IdemixSmartcard.processBuildProofResponses(responses, spec);
         // Report caught exceptions
@@ -535,7 +542,12 @@ implements ProverInterface, RecipientInterface {
      */
     public void setIssuanceSpecification(IssuanceSpec spec) throws CardServiceException {
         issuanceSpec = spec;
-        execute(IdemixSmartcard.setIssuanceSpecificationCommands(spec, credentialId));
+        
+        if (cardVersion.older(new CardVersion(0,8))) {
+        	execute(IdemixSmartcard.setIssuanceSpecificationCommands_0_7(spec, credentialId));
+        } else {
+        	execute(IdemixSmartcard.setIssuanceSpecificationCommands(spec, credentialId));
+        }
     }
     
     /**
