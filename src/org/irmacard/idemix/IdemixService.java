@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
+import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
 
@@ -86,8 +87,7 @@ implements ProverInterface, RecipientInterface {
 	/**
 	 * Card Version, this is read when the applet is selected
 	 */
-	protected byte[] cardVersion = null;
-
+	protected CardVersion cardVersion = null;
 	
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
@@ -114,7 +114,7 @@ implements ProverInterface, RecipientInterface {
 		this.service = service;
 		this.credentialId = credentialId; 
 	}
-	
+		
     /**
      * Open a communication channel to an Idemix applet.
      */
@@ -123,7 +123,25 @@ implements ProverInterface, RecipientInterface {
         if (!isOpen()) {
             service.open();
         }
-        cardVersion = selectApplication();
+        byte[] response = selectApplication();
+        // Pre 0.7 series
+        if (response == null || response.length == 0) {
+        	cardVersion = new CardVersion(0, 6, "or older");
+        // 0.7 series
+        } else if (response.length == 4) {
+           	cardVersion = new CardVersion(response[1], response[2], (int) response[3]);
+        // 0.8 series and later
+        } else {
+        	int i = 0;
+        	if (response[i++] == 0x6F) {
+        		int length = response[i++];
+        		byte[] data = new byte[length];
+        		System.arraycopy(response, i, data, 0, length);
+        		cardVersion = new CardVersion(data);
+        	} else {
+        		System.err.println("Unknown response value");
+        	}
+        }
     }
 
     /**
@@ -610,7 +628,7 @@ implements ProverInterface, RecipientInterface {
 		return list;
     }
 
-    public byte[] getCardVersion() {
+    public CardVersion getCardVersion() {
     	return cardVersion;
     }
 }
