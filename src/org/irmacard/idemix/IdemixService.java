@@ -19,7 +19,6 @@
 
 package org.irmacard.idemix;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
@@ -30,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
+import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
 
@@ -41,7 +41,6 @@ import net.sourceforge.scuba.smartcards.ProtocolCommands;
 import net.sourceforge.scuba.smartcards.ProtocolResponse;
 import net.sourceforge.scuba.smartcards.ProtocolResponses;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.util.Hex;
 
 import com.ibm.zurich.idmx.api.ProverInterface;
@@ -92,8 +91,8 @@ implements ProverInterface, RecipientInterface {
     /**
      * Card Version, this is read when the applet is selected
      */
-    protected byte[] cardVersion = null;
-    
+    protected CardVersion cardVersion = null;
+	
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
     /**************************************************************************/
@@ -128,7 +127,25 @@ implements ProverInterface, RecipientInterface {
         if (!isOpen()) {
             service.open();
         }
-        cardVersion = selectApplication();
+        byte[] response = selectApplication();
+        // Pre 0.7 series
+        if (response == null || response.length == 0) {
+        	cardVersion = new CardVersion(0, 6, "or older");
+        // 0.7 series
+        } else if (response.length == 4) {
+           	cardVersion = new CardVersion(response[1], response[2], (int) response[3]);
+        // 0.8 series and later
+        } else {
+        	int i = 0;
+        	if (response[i++] == 0x6F) {
+        		int length = response[i++];
+        		byte[] data = new byte[length];
+        		System.arraycopy(response, i, data, 0, length);
+        		cardVersion = new CardVersion(data);
+        	} else {
+        		System.err.println("Unknown response value");
+        	}
+        }
     }
 
     /**
@@ -249,62 +266,15 @@ implements ProverInterface, RecipientInterface {
      */
     public byte[] selectApplication()
     throws CardServiceException {
-        ProtocolResponse response = execute(IdemixSmartcard.selectApplicationCommand);
-        return parseVersion(response.getData());
-    }
-
-    private byte[] parseVersion(byte[] selectResponse)
-    throws CardServiceException {
-        if (selectResponse == null) {
-            return null;
-        }
-
-        switch (selectResponse.length) {
-          case 0:
-            return null;
-
-          case 4:
-            if (selectResponse[0] == 0x49 && selectResponse[1] == 0x00) {
-                return selectResponse;
-            } else {
-                throw new CardServiceException("Unknown card version");
-            }
-
-          default:
-            TLVInputStream tlv = null;
-            try {
-                tlv = new TLVInputStream(new ByteArrayInputStream(selectResponse));
-                int tag = tlv.readTag();
-                if (tag == 0x6F) { // FCI tag, skip to data
-                    tlv.readLength();
-                    tag = tlv.readTag();
-                }
-                if (tag == 0x85) { // Proprietary information
-                    tlv.readLength();
-                    return tlv.readValue();
-                }
-                if (tag == 0xA5) { // Proprietary information in TLV format
-                    tlv.readLength();
-                    tag = tlv.readTag();
-                    if (tag == 0x04) { // Octet string
-                        tlv.readLength();
-                        return tlv.readValue();
-                    }
-                }
-                throw new CardServiceException("Version information not found");
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new CardServiceException("Failed to parse SELECT response: " + e.getMessage());
-            } finally {
-               if (tlv != null) {
-                   try {
-                       tlv.close();
-                   } catch (IOException e) {
-                       // Don't care about failing close.
-                   }
-               }
-            }
-          }
+    	ProtocolResponse response;
+    	try {
+    		response = execute(IdemixSmartcard.selectApplicationCommand);
+    	} catch (CardServiceException e) {
+    		System.err.println(e.getMessage());
+    		System.err.println("Failed to select application, now looking for legacy version");
+    		response = execute(IdemixSmartcard.selectApplicationCommand_0_7);
+    	}
+    	return response.getData();
     }
 
     /**
@@ -367,6 +337,50 @@ implements ProverInterface, RecipientInterface {
         return -1;
     }
     
+    /**
+     * Query credential pin verification status on the card.
+     *
+     * @return Number of tries left, or -1 in case of success
+     * @throws CardServiceException if an error occurred.
+     */
+    public int queryCredentialPin()
+    throws CardServiceException {
+    	return queryPin(IdemixSmartcard.P2_PIN_ATTRIBUTE);
+    }
+
+    /**
+     * Query card pin verification status on the card.
+     *
+     * @return Number of tries left, or -1 in case of success
+     * @throws CardServiceException if an error occurred.
+     */
+    public int queryCardPin()
+    throws CardServiceException {
+    	return queryPin(IdemixSmartcard.P2_PIN_ADMIN);
+    }
+
+    /**
+     * Query pin verification status on the card.
+     *
+     * @param pinID	the type of PIN that is send to the card.
+     * @param pin 	ASCII encoded pin
+     * @return Number of tries left, or -1 in case of success
+     * @throws CardServiceException if an error occurred.
+     */
+    public int queryPin(byte pinID) 
+    throws CardServiceException {
+    	try {
+    		execute(IdemixSmartcard.queryPinCommand(pinID));
+    	} catch (CardServiceException e) {
+    		if (!e.getMessage().toUpperCase().contains("63C")) {
+    			throw e;
+    		}
+
+    		return e.getSW() - 0x000063C0;
+    	}
+    	
+    	return -1;
+    }
     /**
      * Update the pin on the card
      *
@@ -627,7 +641,7 @@ implements ProverInterface, RecipientInterface {
         execute(IdemixSmartcard.verifyCertificateCommands(cert));
     }
 
-    public byte[] getCardVersion() {
-        return cardVersion;
+    public CardVersion getCardVersion() {
+    	return cardVersion;
     }
 }

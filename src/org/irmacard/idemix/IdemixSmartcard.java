@@ -70,7 +70,8 @@ public class IdemixSmartcard {
     /**
      * AID of the IRMAcard application: ASCII encoding of "IRMAcard".
      */
-    private static final byte[] AID = {0x49, 0x52, 0x4D, 0x41, 0x63, 0x61, 0x72, 0x64};
+    private static final byte[] AID = {(byte) 0xF8, 0x49, 0x52, 0x4D, 0x41, 0x63, 0x61, 0x72, 0x64};    
+    private static final byte[] AID_0_7 = {0x49, 0x52, 0x4D, 0x41, 0x63, 0x61, 0x72, 0x64};
 
     /**
      * INStruction to select an application.
@@ -356,6 +357,12 @@ public class IdemixSmartcard {
     				"Select IRMAcard application",
     				 new CommandAPDU(ISO7816.CLA_ISO7816,
     			                INS_SELECT_APPLICATION, P1_SELECT_BY_NAME, 0x00, AID, 256)); // LE == 0 is required.
+    public static ProtocolCommand selectApplicationCommand_0_7 =
+    		new ProtocolCommand(
+    				"selectapplet",
+    				"Select IRMAcard application",
+    				 new CommandAPDU(ISO7816.CLA_ISO7816,
+    			                INS_SELECT_APPLICATION, P1_SELECT_BY_NAME, 0x00, AID_0_7, 256)); // LE == 0 is required.
 
     /**
      * Get the APDU commands for setting the specification of
@@ -531,6 +538,16 @@ public class IdemixSmartcard {
     					"Authorize using PIN",
     					new CommandAPDU(
     			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, pinID, pinBytes)
+    					);
+    }
+
+    public static ProtocolCommand queryPinCommand(byte pinID) {
+    	return
+    			new ProtocolCommand(
+    					"querypin",
+    					"Query PIN verification status",
+    					new CommandAPDU(
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, pinID)
     					);
     }
 
