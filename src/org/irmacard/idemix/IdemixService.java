@@ -243,7 +243,14 @@ implements ProverInterface, RecipientInterface {
      */
     public byte[] selectApplication()
     throws CardServiceException {
-    	ProtocolResponse response = execute(IdemixSmartcard.selectApplicationCommand);
+    	ProtocolResponse response;
+    	try {
+    		response = execute(IdemixSmartcard.selectApplicationCommand);
+    	} catch (CardServiceException e) {
+    		System.err.println(e.getMessage());
+    		System.err.println("Failed to select application, now looking for legacy version");
+    		response = execute(IdemixSmartcard.selectApplicationCommand_0_7);
+    	}
     	return response.getData();
     }
 
