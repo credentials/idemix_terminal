@@ -308,6 +308,50 @@ implements ProverInterface, RecipientInterface {
     }
     
     /**
+     * Query credential pin verification status on the card.
+     *
+     * @return Number of tries left, or -1 in case of success
+     * @throws CardServiceException if an error occurred.
+     */
+    public int queryCredentialPin()
+    throws CardServiceException {
+    	return queryPin(IdemixSmartcard.P2_PIN_ATTRIBUTE);
+    }
+
+    /**
+     * Query card pin verification status on the card.
+     *
+     * @return Number of tries left, or -1 in case of success
+     * @throws CardServiceException if an error occurred.
+     */
+    public int queryCardPin()
+    throws CardServiceException {
+    	return queryPin(IdemixSmartcard.P2_PIN_ADMIN);
+    }
+
+    /**
+     * Query pin verification status on the card.
+     *
+     * @param pinID	the type of PIN that is send to the card.
+     * @param pin 	ASCII encoded pin
+     * @return Number of tries left, or -1 in case of success
+     * @throws CardServiceException if an error occurred.
+     */
+    public int queryPin(byte pinID) 
+    throws CardServiceException {
+    	try {
+    		execute(IdemixSmartcard.queryPinCommand(pinID));
+    	} catch (CardServiceException e) {
+    		if (!e.getMessage().toUpperCase().contains("63C")) {
+    			throw e;
+    		}
+
+    		return e.getSW() - 0x000063C0;
+    	}
+    	
+    	return -1;
+    }
+    /**
 	 * Update the pin on the card
 	 *
 	 * Note that to use this function one first needs to establish an

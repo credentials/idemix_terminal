@@ -532,6 +532,16 @@ public class IdemixSmartcard {
     					);
     }
 
+    public static ProtocolCommand queryPinCommand(byte pinID) {
+    	return
+    			new ProtocolCommand(
+    					"querypin",
+    					"Query PIN verification status",
+    					new CommandAPDU(
+    			        		ISO7816.CLA_ISO7816, ISO7816.INS_VERIFY, 0x00, pinID)
+    					);
+    }
+
 	public static ProtocolCommand updatePinCommand(byte pinID, byte[] oldPin, byte[] newPin) {
 		byte[] pinBytes = new byte[16];
 		System.arraycopy(oldPin, 0, pinBytes, 0, oldPin.length);
