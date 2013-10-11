@@ -1,9 +1,13 @@
 package org.irmacard.idemix.util;
 
+import java.io.Serializable;
+
 import net.sourceforge.scuba.util.Hex;
 
-public class CardVersion implements Comparable<CardVersion> {
+public class CardVersion implements Comparable<CardVersion>, Serializable {
 	
+	private static final long serialVersionUID = 3887160109187109660L;
+
 	public enum Type { BUILD, DEBUG, REV, ALPHA, BETA, CANDIDATE, RELEASE };
 
 	private int major = 0;
@@ -41,7 +45,7 @@ public class CardVersion implements Comparable<CardVersion> {
 	 * @param version
 	 */
 	public CardVersion(byte[] version) {
-		int i = 5;
+		int i = 6;
 		
 		// Major
 		major = version[i++];
@@ -66,6 +70,7 @@ public class CardVersion implements Comparable<CardVersion> {
 		
 		// Extra
 		if (i < version.length && version[i++] == 0x10) {
+			i += 2;
 			int length = version[i++];
 			byte[] str = new byte[length];
 			System.arraycopy(version, i, str, 0, length);
@@ -140,7 +145,7 @@ public class CardVersion implements Comparable<CardVersion> {
 		String version = extra;
 		
 		if (count != null) {
-			version += " " + count;
+			version += count;
 		}
 		if (data != null && data.length > 0) {
 			version += " " + Hex.toHexString(data);

@@ -977,11 +977,14 @@ public class IdemixSmartcard {
 	}
 
 	public static ProtocolCommand selectCredentialCommand(short id) {
+        byte[] data = new byte[2];
+        data[0] = (byte) (id >> 8);
+        data[1] = (byte) (id & 0xff);
+
 		return new ProtocolCommand(
 				"selectcredential",
 				"Select a credential for further modifications",
-				new CommandAPDU(CLA_IRMACARD, INS_ADMIN_CREDENTIAL, id >> 8,
-						id & 0xff));
+				new CommandAPDU(CLA_IRMACARD, INS_ADMIN_CREDENTIAL, 0, 0, data));
 	}
 
 	public static ProtocolCommands getAttributesCommands(IssuanceSpec spec) {
@@ -1003,7 +1006,7 @@ public class IdemixSmartcard {
 		return new ProtocolCommand(
 			"removecredential", 
 			"Remove credential (id " + id + ")", 
-			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, id >> 8, id & 0x00ff, addTimeStamp(empty)));
+			new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, 0, 0, addTimeStamp(empty)));
 	}
 
 	public static ProtocolCommand getCredentialFlagsCommand() {

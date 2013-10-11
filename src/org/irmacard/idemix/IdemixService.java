@@ -149,6 +149,8 @@ implements ProverInterface, RecipientInterface {
         		System.err.println("Unknown response value");
         	}
         }
+        
+        System.out.println("Found card application: " + cardVersion.toString());
     }
 
     /**
