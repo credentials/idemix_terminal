@@ -128,13 +128,16 @@ implements ProverInterface, RecipientInterface {
             service.open();
         }
         byte[] response = selectApplication();
-        // Pre 0.7 series
+
+        // 0.6.1 or older had no versioning
         if (response == null || response.length == 0) {
-        	cardVersion = new CardVersion(0, 6, "or older");
-        // 0.7 series
+        	cardVersion = new CardVersion(0, 6, 1, "or older");
+
+        // 0.6.2 - 0.7.2
         } else if (response.length == 4) {
            	cardVersion = new CardVersion(response[1], response[2], (int) response[3]);
-        // 0.8 series and later
+
+        // 0.8 and newer
         } else {
         	int i = 0;
         	if (response[i++] == 0x6F) {
