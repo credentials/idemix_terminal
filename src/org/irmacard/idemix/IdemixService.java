@@ -439,9 +439,9 @@ implements ProverInterface, RecipientInterface {
      * authenticated connection to the card.
      * @return Number of tries left, or -1 in case of success
      */
-    public int updateCredentialPin(byte[] oldPin, byte[] newPin)
+    public int updateCredentialPin(byte[] newPin)
             throws CardServiceException {
-        return updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, oldPin, newPin);
+        return updatePin(IdemixSmartcard.P2_PIN_ATTRIBUTE, null, newPin);
     }
 
     /**

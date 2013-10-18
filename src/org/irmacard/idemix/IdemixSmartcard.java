@@ -632,9 +632,15 @@ public class IdemixSmartcard {
     }
 
 	public static ProtocolCommand updatePinCommand(byte pinID, byte[] oldPin, byte[] newPin) {
-		byte[] pinBytes = new byte[16];
-		System.arraycopy(oldPin, 0, pinBytes, 0, oldPin.length);
-		System.arraycopy(newPin, 0, pinBytes, 8, newPin.length);
+		byte[] pinBytes;
+		if (oldPin != null) {
+			pinBytes = new byte[16];
+			System.arraycopy(oldPin, 0, pinBytes, 0, oldPin.length);
+			System.arraycopy(newPin, 0, pinBytes, 8, newPin.length);
+		} else {
+			pinBytes = new byte[8];
+			System.arraycopy(newPin, 0, pinBytes, 0, newPin.length);
+		}
 		
     	return
     			new ProtocolCommand(
