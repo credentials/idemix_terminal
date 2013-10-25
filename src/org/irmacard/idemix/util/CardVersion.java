@@ -157,23 +157,25 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 	public Type getType() {
 		Type type = Type.RELEASE;
 		
-		if (extra.contains("build")) {
-			type = Type.BUILD;
-		}
-		if (extra.contains("rev") || extra.contains("revision") || extra.contains("r")) {
-			type = Type.REV;
-		}
-		if (extra.contains("alpha")) {
-			type = Type.ALPHA;
-		}
-		if (extra.contains("beta")) {
-			type = Type.BETA;
-		}
-		if (extra.contains("rc") || extra.contains("candidate")) {
-			type = Type.CANDIDATE;
-		}
-		if (extra.contains("debug")) {
-			type = Type.DEBUG;
+		if (extra != null) {
+			if (extra.contains("build")) {
+				type = Type.BUILD;
+			}
+			if (extra.contains("rev") || extra.contains("revision") || extra.contains("r")) {
+				type = Type.REV;
+			}
+			if (extra.contains("alpha")) {
+				type = Type.ALPHA;
+			}
+			if (extra.contains("beta")) {
+				type = Type.BETA;
+			}
+			if (extra.contains("rc") || extra.contains("candidate")) {
+				type = Type.CANDIDATE;
+			}
+			if (extra.contains("debug")) {
+				type = Type.DEBUG;
+			}
 		}
 
 		return type;
@@ -202,7 +204,9 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 	}
 
 	private int compareInteger(Integer a, Integer b) {
-		if (a == null && b != null) {
+		if (a == null && b == null) {
+			return 0;
+		} else if (a == null && b != null) {
 			return -1;
 		} else 	if (a != null && b == null) {
 			return 1;

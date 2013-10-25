@@ -1,19 +1,19 @@
 /**
  * IdemixService.java
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) Pim Vullers, Radboud University Nijmegen, June 2011.
  */
 
@@ -55,12 +55,12 @@ import com.ibm.zurich.idmx.showproof.ProofSpec;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
- *  
+ *
  * @author Pim Vullers
  * @version $Revision: 554 $ by $Author: pim $
  *          $LastChangedDate: 2011-04-28 16:31:47 +0200 (Thu, 28 Apr 2011) $
  */
-public class IdemixService extends CardService 
+public class IdemixService extends CardService
 implements ProverInterface, RecipientInterface {
 
     /**
@@ -92,7 +92,7 @@ implements ProverInterface, RecipientInterface {
      * Card Version, this is read when the applet is selected
      */
     protected CardVersion cardVersion = null;
-	
+
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
     /**************************************************************************/
@@ -100,7 +100,7 @@ implements ProverInterface, RecipientInterface {
     /**
      * Construct a new Idemix service based on some CardService, which will be
      * used for the actual communication with an Idemix applet.
-     * 
+     *
      * @param service the service to use for communication with the applet.
      */
     public IdemixService(CardService service) {
@@ -110,10 +110,10 @@ implements ProverInterface, RecipientInterface {
     /**
      * Construct a new Idemix service based on some CardService, which will be
      * used for the actual communication with an Idemix applet.
-     * 
+     *
      * @param service the service to use for communication with the applet.
      * @param credential identifier.
-     */    
+     */
     public IdemixService(CardService service, short credentialId) {
         this.service = service;
         this.credentialId = credentialId;
@@ -122,7 +122,7 @@ implements ProverInterface, RecipientInterface {
     /**
      * Open a communication channel to an Idemix applet.
      */
-    public void open() 
+    public void open()
     throws CardServiceException {
         if (!isOpen()) {
             service.open();
@@ -131,31 +131,31 @@ implements ProverInterface, RecipientInterface {
 
         // 0.6.1 or older had no versioning
         if (response == null || response.length == 0) {
-        	cardVersion = new CardVersion(0, 6, 1, "or older");
+            cardVersion = new CardVersion(0, 6, 1, "or older");
 
         // 0.6.2 - 0.7.2
         } else if (response.length == 4) {
-           	cardVersion = new CardVersion(response[1], response[2], (int) response[3]);
+            cardVersion = new CardVersion(response[1], response[2], (int) response[3]);
 
         // 0.8 and newer
         } else {
-        	int i = 0;
-        	if (response[i++] == 0x6F) {
-        		int length = response[i++];
-        		byte[] data = new byte[length];
-        		System.arraycopy(response, i, data, 0, length);
-        		cardVersion = new CardVersion(data);
-        	} else {
-        		System.err.println("Unknown response value");
-        	}
+            int i = 0;
+            if (response[i++] == 0x6F) {
+                int length = response[i++];
+                byte[] data = new byte[length];
+                System.arraycopy(response, i, data, 0, length);
+                cardVersion = new CardVersion(data);
+            } else {
+                System.err.println("Unknown response value");
+            }
         }
-        
+
         System.out.println("Found card application: " + cardVersion.toString());
     }
 
     /**
      * Check whether a communication channel with a smart card exists.
-     * 
+     *
      * @return whether the channel is open or not.
      */
     public boolean isOpen() {
@@ -164,13 +164,13 @@ implements ProverInterface, RecipientInterface {
 
     /**
      * Send an APDU over the communication channel to the smart card.
-     * 
+     *
      * @param apdu the APDU to be send to the smart card.
      * @return ResponseAPDU the response from the smart card.
      * @throws CardServiceException if some error occurred while transmitting.
      */
-    public ResponseAPDU transmit(CommandAPDU capdu) 
-    throws CardServiceException { 
+    public ResponseAPDU transmit(CommandAPDU capdu)
+    throws CardServiceException {
 
         if (VERBOSE) {
             System.out.println();
@@ -202,7 +202,7 @@ implements ProverInterface, RecipientInterface {
             service.close();
         }
     }
-    
+
     public byte[] getATR()
     throws CardServiceException {
         return service.getATR();
@@ -214,7 +214,7 @@ implements ProverInterface, RecipientInterface {
 
     /**
      * Execute a protocol command on the smart card.
-     * 
+     *
      * @param command to be executed on the card.
      * @return the response received from the card.
      * @throws CardServiceException if an error occurred.
@@ -234,52 +234,52 @@ implements ProverInterface, RecipientInterface {
 
         return new ProtocolResponse(command.getKey(), response);
     }
-    
+
     /**
      * Execute a list of protocol commands on the smart card.
-     * 
+     *
      * @param commands to be executed on the card.
      * @return the responses received from the card.
      * @throws CardServiceException if an error occurred.
      */
-    public ProtocolResponses execute(ProtocolCommands commands) 
+    public ProtocolResponses execute(ProtocolCommands commands)
     throws CardServiceException {
         ProtocolResponses responses = new ProtocolResponses();
-        
+
         for (ProtocolCommand command: commands) {
             ProtocolResponse response = execute(command);
             responses.put(response.getKey(), response);
         }
-        
+
         return responses;
     }
-    
+
     /**
      * Set the credential to interact with.
-     * 
+     *
      * @param identifier of the credential.
      */
     public void setCredential(short identifier) {
         credentialId = identifier;
     }
-    
+
     /**
      * Select the Idemix applet on the smart card.
-     * 
+     *
      * @throws CardServiceException if an error occurred.
      * @throws IOException
      */
     public byte[] selectApplication()
     throws CardServiceException {
-    	ProtocolResponse response;
-    	try {
-    		response = execute(IdemixSmartcard.selectApplicationCommand);
-    	} catch (CardServiceException e) {
-    		System.err.println(e.getMessage());
-    		System.err.println("Failed to select application, now looking for legacy version");
-    		response = execute(IdemixSmartcard.selectApplicationCommand_0_7);
-    	}
-    	return response.getData();
+        ProtocolResponse response;
+        try {
+            response = execute(IdemixSmartcard.selectApplicationCommand);
+        } catch (CardServiceException e) {
+            System.err.println(e.getMessage());
+            System.err.println("Failed to select application, now looking for legacy version");
+            response = execute(IdemixSmartcard.selectApplicationCommand_0_7);
+        }
+        return response.getData();
     }
 
     /**
@@ -330,7 +330,7 @@ implements ProverInterface, RecipientInterface {
     public int sendPin(byte pinID, byte[] pin)
     throws CardServiceException {
         try {
-            execute(IdemixSmartcard.sendPinCommand(pinID, pin));
+            execute(IdemixSmartcard.sendPinCommand(getCardVersion(), pinID, pin));
         } catch (CardServiceException e) {
             if (!e.getMessage().toUpperCase().contains("63C")) {
                 throw e;
@@ -341,7 +341,7 @@ implements ProverInterface, RecipientInterface {
 
         return -1;
     }
-    
+
     /**
      * Query credential pin verification status on the card.
      *
@@ -350,7 +350,7 @@ implements ProverInterface, RecipientInterface {
      */
     public int queryCredentialPin()
     throws CardServiceException {
-    	return queryPin(IdemixSmartcard.P2_PIN_ATTRIBUTE);
+        return queryPin(IdemixSmartcard.P2_PIN_ATTRIBUTE);
     }
 
     /**
@@ -361,30 +361,30 @@ implements ProverInterface, RecipientInterface {
      */
     public int queryCardPin()
     throws CardServiceException {
-    	return queryPin(IdemixSmartcard.P2_PIN_ADMIN);
+        return queryPin(IdemixSmartcard.P2_PIN_ADMIN);
     }
 
     /**
      * Query pin verification status on the card.
      *
-     * @param pinID	the type of PIN that is send to the card.
-     * @param pin 	ASCII encoded pin
+     * @param pinID the type of PIN that is send to the card.
+     * @param pin   ASCII encoded pin
      * @return Number of tries left, or -1 in case of success
      * @throws CardServiceException if an error occurred.
      */
-    public int queryPin(byte pinID) 
+    public int queryPin(byte pinID)
     throws CardServiceException {
-    	try {
-    		execute(IdemixSmartcard.queryPinCommand(pinID));
-    	} catch (CardServiceException e) {
-    		if (!e.getMessage().toUpperCase().contains("63C")) {
-    			throw e;
-    		}
+        try {
+            execute(IdemixSmartcard.queryPinCommand(getCardVersion(), pinID));
+        } catch (CardServiceException e) {
+            if (!e.getMessage().toUpperCase().contains("63C")) {
+                throw e;
+            }
 
-    		return e.getSW() - 0x000063C0;
-    	}
-    	
-    	return -1;
+            return e.getSW() - 0x000063C0;
+        }
+
+        return -1;
     }
     /**
      * Update the pin on the card
@@ -408,7 +408,7 @@ implements ProverInterface, RecipientInterface {
     public int updatePin(byte pinID, byte[] oldPin, byte[] newPin)
     throws CardServiceException {
         try {
-            execute(IdemixSmartcard.updatePinCommand(pinID, oldPin, newPin));
+            execute(IdemixSmartcard.updatePinCommand(getCardVersion(), pinID, oldPin, newPin));
         } catch (CardServiceException e) {
             if (!e.getMessage().toUpperCase().contains("63C")) {
                 throw e;
@@ -445,19 +445,19 @@ implements ProverInterface, RecipientInterface {
     }
 
     /**
-     * Generate the master secret: 
-     * 
+     * Generate the master secret:
+     *
      * <pre>
      *   m_0
      * </pre>
-     * 
+     *
      * @throws CardServiceException if an error occurred.
      */
-    public void generateMasterSecret() 
+    public void generateMasterSecret()
     throws CardServiceException {
-        execute(IdemixSmartcard.generateMasterSecretCommand);
+        execute(IdemixSmartcard.generateMasterSecretCommand(getCardVersion()));
     }
-    
+
     /**
      * @param theNonce1
      *            Nonce provided by the verifier.
@@ -467,9 +467,9 @@ implements ProverInterface, RecipientInterface {
     public Message round1(final Message msg) {
         // Hide CardServiceExceptions, instead return null on failure
         try {
-            ProtocolCommands commands = IdemixSmartcard.round1Commands(issuanceSpec, msg);
+            ProtocolCommands commands = IdemixSmartcard.round1Commands(getCardVersion(), issuanceSpec, msg);
             ProtocolResponses responses = execute(commands);
-            return IdemixSmartcard.processRound1Responses(responses);
+            return IdemixSmartcard.processRound1Responses(getCardVersion(), responses);
 
         // Report caught exceptions
         } catch (CardServiceException e) {
@@ -478,13 +478,13 @@ implements ProverInterface, RecipientInterface {
             return null;
         }
     }
-    
-    
+
+
     /**
      * Called with the second protocol flow as input, outputs the Credential.
      * This is the last step of the issuance protocol, where the Recipient
      * verifies that the signature is valid and outputs it.
-     * 
+     *
      * @param msg
      *            the second flow of the protocol, a message from the Issuer
      * @return null
@@ -493,39 +493,34 @@ implements ProverInterface, RecipientInterface {
         // Hide CardServiceExceptions, instead return null on failure
         try {
             // send Signature
-            execute(IdemixSmartcard.round3Commands(issuanceSpec, msg));
-            
+            execute(IdemixSmartcard.round3Commands(getCardVersion(), issuanceSpec, msg));
+
             // Do NOT return the generated Idemix credential
             return null;
-            
+
         // Report caught exceptions
         } catch (CardServiceException e) {
             System.err.println(e.getMessage() + "\n");
             e.printStackTrace();
             return null;
         }
-    }    
-    
+    }
+
     /**
      * Builds an Identity mixer show-proof data structure, which can be passed
      * to the verifier for verification.
-     * 
+     *
      * @return Identity mixer show-proof data structure.
      */
     public Proof buildProof(final BigInteger nonce, final ProofSpec spec) {
         // Hide CardServiceExceptions, instead return null on failure
         try {
-        	ProtocolCommands commands;
-        
-            if (cardVersion.older(new CardVersion(0,8))) {
-            	commands = IdemixSmartcard.buildProofCommands_0_7(
-                    nonce, spec, credentialId);
-            } else {
-            	commands = IdemixSmartcard.buildProofCommands(
-                    nonce, spec, credentialId);
-            }
+            ProtocolCommands commands;
+
+            commands = IdemixSmartcard.buildProofCommands(getCardVersion(),
+                   nonce, spec, credentialId);
             ProtocolResponses responses = execute(commands);
-            return IdemixSmartcard.processBuildProofResponses(responses, spec);
+            return IdemixSmartcard.processBuildProofResponses(getCardVersion(), responses, spec);
         // Report caught exceptions
         } catch (CardServiceException e) {
             System.err.println(e.getMessage() + "\n");
@@ -533,49 +528,45 @@ implements ProverInterface, RecipientInterface {
             return null;
         }
     }
-    
+
     /**
-     * Set the specification of a certificate issuance: 
-     * 
+     * Set the specification of a certificate issuance:
+     *
      * <ul>
-     *   <li> issuer public key, and 
-     *   <li> context. 
+     *   <li> issuer public key, and
+     *   <li> context.
      * </ul>
-     * 
+     *
      * @param spec the specification to be set.
      * @throws CardServiceException if an error occurred.
      */
     public void setIssuanceSpecification(IssuanceSpec spec) throws CardServiceException {
         issuanceSpec = spec;
-        
-        if (cardVersion.older(new CardVersion(0,8))) {
-        	execute(IdemixSmartcard.setIssuanceSpecificationCommands_0_7(spec, credentialId));
-        } else {
-        	execute(IdemixSmartcard.setIssuanceSpecificationCommands(spec, credentialId));
-        }
+
+        execute(IdemixSmartcard.setIssuanceSpecificationCommands(getCardVersion(), spec, credentialId));
     }
-    
+
     /**
-     * Set the attributes: 
-     * 
+     * Set the attributes:
+     *
      * <pre>
      *   m_1, ..., m_l
      * </pre>
-     * 
+     *
      * @param spec the issuance specification for the ordering of the values.
      * @param values the attributes to be set.
      * @throws CardServiceException if an error occurred.
      */
     public void setAttributes(IssuanceSpec spec, Values values)
     throws CardServiceException {
-        execute(IdemixSmartcard.setAttributesCommands(spec, values));
+        execute(IdemixSmartcard.setAttributesCommands(getCardVersion(), spec, values));
     }
-    
-    public Vector<Integer> getCredentials() 
+
+    public Vector<Integer> getCredentials()
     throws CardServiceException {
         Vector<Integer> list = new Vector<Integer>();
 
-        ProtocolResponse response = execute(IdemixSmartcard.getCredentialsCommand());
+        ProtocolResponse response = execute(IdemixSmartcard.getCredentialsCommand(getCardVersion()));
         byte[] data = response.getData();
 
         for (int i = 0; i < data.length; i = i+2) {
@@ -589,13 +580,13 @@ implements ProverInterface, RecipientInterface {
     }
 
     public void selectCredential(short id) throws CardServiceException {
-        execute(IdemixSmartcard.selectCredentialCommand(id));
+        execute(IdemixSmartcard.selectCredentialCommand(getCardVersion(), id));
     }
 
     public HashMap<String, BigInteger> getAttributes(IssuanceSpec spec)
     throws CardServiceException {
         HashMap<String, BigInteger> attributes = new HashMap<String, BigInteger>();
-        ProtocolCommands commands = IdemixSmartcard.getAttributesCommands(spec);
+        ProtocolCommands commands = IdemixSmartcard.getAttributesCommands(getCardVersion(), spec);
         ProtocolResponses responses = execute(commands);
         for (AttributeStructure attribute : spec.getCredentialStructure().getAttributeStructs()) {
             String attName = attribute.getName();
@@ -604,21 +595,21 @@ implements ProverInterface, RecipientInterface {
         }
         return attributes;
     }
-    
+
     public void removeCredential(short id)
     throws CardServiceException {
-        execute(IdemixSmartcard.removeCredentialCommand(id));
+        execute(IdemixSmartcard.removeCredentialCommand(getCardVersion(), id));
     }
-    
+
     public IdemixFlags getCredentialFlags()
     throws CardServiceException {
-        ProtocolResponse response = execute(IdemixSmartcard.getCredentialFlagsCommand());
+        ProtocolResponse response = execute(IdemixSmartcard.getCredentialFlagsCommand(getCardVersion()));
         return new IdemixFlags(response.getData());
     }
-    
+
     public void setCredentialFlags(IdemixFlags flags)
     throws CardServiceException {
-        execute(IdemixSmartcard.setCredentialFlagsCommand(flags));
+        execute(IdemixSmartcard.setCredentialFlagsCommand(getCardVersion(), flags));
     }
 
     private final int LOG_SIZE = 30;
@@ -634,7 +625,7 @@ implements ProverInterface, RecipientInterface {
 
         for (byte start_entry = 0; start_entry < LOG_SIZE;
                 start_entry = (byte) (start_entry + LOG_ENTRIES_PER_APDU)) {
-            response = execute(IdemixSmartcard.getLogCommand(start_entry));
+            response = execute(IdemixSmartcard.getLogCommand(getCardVersion(), start_entry));
             byte[] data = response.getData();
             for (int entry = 0; entry < LOG_ENTRIES_PER_APDU
                     && entry + start_entry < LOG_SIZE; entry++) {
@@ -651,14 +642,15 @@ implements ProverInterface, RecipientInterface {
     }
 
     public void setCAKey(RSAPublicKey caKey) throws CardServiceException {
-        execute(IdemixSmartcard.setCAKeyCommands(caKey));
+        execute(IdemixSmartcard.setCAKeyCommands(getCardVersion(), caKey));
     }
 
     public void verifyCertificate(Certificate cert) throws CertificateEncodingException, CardServiceException {
-        execute(IdemixSmartcard.verifyCertificateCommands(cert));
+        execute(IdemixSmartcard.verifyCertificateCommands(getCardVersion(), cert));
     }
 
     public CardVersion getCardVersion() {
-    	return cardVersion;
+        System.out.println("[IdemixService] Returned version: " + cardVersion);
+        return cardVersion;
     }
 }
