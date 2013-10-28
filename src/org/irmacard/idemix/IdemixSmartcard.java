@@ -281,6 +281,15 @@ public class IdemixSmartcard {
     public static final byte P2_PIN_ADMIN = 0x01;
 
     /**
+     * Values for backward-compatibility with older cards.
+     */
+    private static final byte INS_ISSUE_SIGNATURE_0_7 = 0x1D;
+    private static final byte INS_ISSUE_SIGNATURE_PROOF_0_7 = 0x1E;
+    private static final byte P1_SIGNATURE_VERIFY_0_7 = 0x00;
+    private static final byte P1_PROOF_VERIFY_0_7 = 0x00;
+    private static final byte P1_PROOF_C_0_7 = 0x01;
+    private static final byte P1_PROOF_S_E_0_7 = 0x04;
+    /**
      * Produces an unsigned byte-array representation of a BigInteger.
      *
      * <p>BigInteger adds an extra sign bit to the beginning of its byte
@@ -739,29 +748,61 @@ public class IdemixSmartcard {
                         new CommandAPDU(
                                 CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_V, 0x00,
                                 fixLength(v, sysPars.getL_v()))));
-        BigInteger c = msg.getProof().getChallenge();
-        commands.add(
-                new ProtocolCommand(
-                        "proof_c",
-                        "Issue proof c'",
-                        new CommandAPDU(
-                                CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_PROOF_C, 0x00,
-                                fixLength(c, sysPars.getL_H()))));
-        BigInteger s_e =
-                (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
-        commands.add(
-                new ProtocolCommand(
-                        "proof_s_e",
-                        "Issue proof s_e",
-                        new CommandAPDU(
-                                CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_PROOF_S_E, 0x00,
-                                fixLength(s_e, sysPars.getL_n()))));
-        commands.add(
-                new ProtocolCommand(
-                        "issue_verify",
-                        "Verify issuance results (signature & proof)",
-                        new CommandAPDU(
-                                CLA_IRMACARD, INS_ISSUE_VERIFY, 0x00, 0x00)));
+        if (cv.newer(new CardVersion(0,7,2))) {
+	        BigInteger c = msg.getProof().getChallenge();
+	        commands.add(
+	                new ProtocolCommand(
+	                        "proof_c",
+	                        "Issue proof c'",
+	                        new CommandAPDU(
+	                                CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_PROOF_C, 0x00,
+	                                fixLength(c, sysPars.getL_H()))));
+	        BigInteger s_e =
+	                (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
+	        commands.add(
+	                new ProtocolCommand(
+	                        "proof_s_e",
+	                        "Issue proof s_e",
+	                        new CommandAPDU(
+	                                CLA_IRMACARD, INS_ISSUE_SIGNATURE, P1_SIGNATURE_PROOF_S_E, 0x00,
+	                                fixLength(s_e, sysPars.getL_n()))));
+	        commands.add(
+	                new ProtocolCommand(
+	                        "issue_verify",
+	                        "Verify issuance results (signature & proof)",
+	                        new CommandAPDU(
+	                                CLA_IRMACARD, INS_ISSUE_VERIFY, 0x00, 0x00)));
+        } else {
+	        commands.add(
+	                new ProtocolCommand(
+	                        "issue_verify",
+	                        "Verify issuance results (signature & proof)",
+	                        new CommandAPDU(
+	                                CLA_IRMACARD, INS_ISSUE_SIGNATURE_0_7, P1_SIGNATURE_VERIFY_0_7, 0x00)));
+	        BigInteger c = msg.getProof().getChallenge();
+	        commands.add(
+	                new ProtocolCommand(
+	                        "proof_c",
+	                        "Issue proof c'",
+	                        new CommandAPDU(
+	                                CLA_IRMACARD, INS_ISSUE_SIGNATURE_PROOF_0_7, P1_PROOF_C_0_7, 0x00,
+	                                fixLength(c, sysPars.getL_H()))));
+	        BigInteger s_e =
+	                (BigInteger) msg.getProof().getSValue(IssuanceSpec.s_e).getValue();
+	        commands.add(
+	                new ProtocolCommand(
+	                        "proof_s_e",
+	                        "Issue proof s_e",
+	                        new CommandAPDU(
+	                                CLA_IRMACARD, INS_ISSUE_SIGNATURE_PROOF_0_7, P1_PROOF_S_E_0_7, 0x00,
+	                                fixLength(s_e, sysPars.getL_n()))));
+	        commands.add(
+	                new ProtocolCommand(
+	                        "issue_verify",
+	                        "Verify issuance results (signature & proof)",
+	                        new CommandAPDU(
+	                                CLA_IRMACARD, INS_ISSUE_SIGNATURE_PROOF_0_7, P1_PROOF_VERIFY_0_7, 0x00)));
+        }
         return commands;
     }
 
