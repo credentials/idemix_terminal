@@ -23,7 +23,7 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 	/**
 	 * Constructor which gets all elements as separate variables.
 	 * 
-	 * @param maj
+	 * @param majresponse
 	 * @param min
 	 * @param mnt
 	 * @param bld
@@ -45,57 +45,73 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 	 * @param version
 	 */
 	public CardVersion(byte[] version) {
-		int i = 6;
-		
-		// Major
-		major = version[i++];
-		
-		// Minor
-		if (i < version.length && version[i] == 0x02) {		
-			i += 2;
-			minor = version[i++];			
-		}
-		
-		// Maintenance
-		if (i < version.length && version[i] == 0x02) {
-			i += 2;
-			maint = (int) version[i++];			
-		}
-		
-		// Build
-		if (i < version.length && version[i] == 0x02) {
-			i += 2;
-			build = (int) version[i++];			
-		}
-		
-		// Extra
-		if (i < version.length && version[i++] == 0x10) {
-			i += 2;
-			int length = version[i++];
-			byte[] str = new byte[length];
-			System.arraycopy(version, i, str, 0, length);
-			try {
-				extra = new String(str, "UTF-8");
-			} catch (java.io.UnsupportedEncodingException e) {
-				System.err.println(e.getMessage());
-				System.err.println("Apparently UTF-8 is not supported, trying system default charset.");
-				extra = new String(str);
-			}
-			i += length;
-		
-			// Counter
-			if (i < version.length && version[i] == 0x02) {
+		// 0.6.1 or older had no versioning
+		if (version == null || version.length == 0) {
+            major = 0;
+            minor = 6;
+            maint = 1;
+            extra = "or older";
+
+        // 0.6.2 - 0.7.2
+        } else if (version.length == 4) {
+            major = version[1];
+            minor = version[2];
+            maint = (int) version[3];
+            
+        // 0.8 and newer
+        } else {
+			int i = 6;
+			
+			// Major
+			major = version[i++];
+			
+			// Minor
+			if (i < version.length && version[i] == 0x02) {		
 				i += 2;
-				count = (int) version[i++];
+				minor = version[i++];			
 			}
 			
-			// Extra data
-			if (i < version.length && version[i] == 0x04) {
-				length = version[i++];
-				data = new byte[length];
-				System.arraycopy(version, i, data, 0, length);
+			// Maintenance
+			if (i < version.length && version[i] == 0x02) {
+				i += 2;
+				maint = (int) version[i++];			
 			}
-		}
+			
+			// Build
+			if (i < version.length && version[i] == 0x02) {
+				i += 2;
+				build = (int) version[i++];			
+			}
+			
+			// Extra
+			if (i < version.length && version[i++] == 0x10) {
+				i += 2;
+				int length = version[i++];
+				byte[] str = new byte[length];
+				System.arraycopy(version, i, str, 0, length);
+				try {
+					extra = new String(str, "UTF-8");
+				} catch (java.io.UnsupportedEncodingException e) {
+					System.err.println(e.getMessage());
+					System.err.println("Apparently UTF-8 is not supported, trying system default charset.");
+					extra = new String(str);
+				}
+				i += length;
+			
+				// Counter
+				if (i < version.length && version[i] == 0x02) {
+					i += 2;
+					count = (int) version[i++];
+				}
+				
+				// Extra data
+				if (i < version.length && version[i] == 0x04) {
+					length = version[i++];
+					data = new byte[length];
+					System.arraycopy(version, i, data, 0, length);
+				}
+			}
+        }
 	}
 
 	// Convenience constructors
