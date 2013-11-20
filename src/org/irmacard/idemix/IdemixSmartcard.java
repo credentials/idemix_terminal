@@ -583,7 +583,7 @@ public class IdemixSmartcard {
     public static ProtocolCommands queryPinCommand(CardVersion cv, byte pinID) {
         ProtocolCommands commands = new ProtocolCommands();
 
-        if (!cv.older(new CardVersion(0,8))) {
+        if (cv.newer(new CardVersion(0, 7, 2))) {
             commands.add(new ProtocolCommand(
                         "querypin",
                         "Query PIN verification status",
