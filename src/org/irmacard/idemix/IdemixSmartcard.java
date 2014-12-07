@@ -31,15 +31,15 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import org.irmacard.idemix.util.CardVersion;
-import org.irmacard.idemix.util.IdemixFlags;
-
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.ProtocolCommand;
 import net.sourceforge.scuba.smartcards.ProtocolCommands;
 import net.sourceforge.scuba.smartcards.ProtocolErrors;
 import net.sourceforge.scuba.smartcards.ProtocolResponses;
+
+import org.irmacard.idemix.util.CardVersion;
+import org.irmacard.idemix.util.IdemixFlags;
 
 import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
@@ -71,204 +71,204 @@ public class IdemixSmartcard {
     /**
      * AID of the IRMAcard application: ASCII encoding of "IRMAcard".
      */
-    private static final byte[] AID = {(byte) 0xF8, 0x49, 0x52, 0x4D, 0x41, 0x63, 0x61, 0x72, 0x64};
-    private static final byte[] AID_0_7 = {0x49, 0x52, 0x4D, 0x41, 0x63, 0x61, 0x72, 0x64};
+    public static final byte[] AID = {(byte) 0xF8, 0x49, 0x52, 0x4D, 0x41, 0x63, 0x61, 0x72, 0x64};
+    public static final byte[] AID_0_7 = {0x49, 0x52, 0x4D, 0x41, 0x63, 0x61, 0x72, 0x64};
 
     /**
      * INStruction to select an application.
      */
-    private static final byte INS_SELECT_APPLICATION = (byte) 0xA4;
+    public static final byte INS_SELECT_APPLICATION = (byte) 0xA4;
 
     /**
      * P1 parameter for select by name.
      */
-    private static final byte P1_SELECT_BY_NAME = 0x04;
+    public static final byte P1_SELECT_BY_NAME = 0x04;
 
 
     /**
      * CLAss to be used for IRMA APDUs.
      */
-    private static final byte CLA_IRMACARD = (byte) 0x80;
+    public static final byte CLA_IRMACARD = (byte) 0x80;
 
     /**
      * CLAss mask to indicate command chaining.
      */
-    private static final byte CLA_COMMAND_CHAINING = 0x10;
+    public static final byte CLA_COMMAND_CHAINING = 0x10;
 
     /**
      * INStruction to generate the master secret on the card.
      */
-    private static final byte INS_GENERATE_SECRET = 0x01;
+    public static final byte INS_GENERATE_SECRET = 0x01;
 
     /**
      * INStruction to generate the master secret on the card.
      */
-    private static final byte INS_AUTHENTICATION_SECRET = 0x02;
+    public static final byte INS_AUTHENTICATION_SECRET = 0x02;
 
     /**
      * INStruction to start issuing a credential (and to set the corresponding
      * context and issuance information).
      */
-    private static final byte INS_ISSUE_CREDENTIAL = 0x10;
+    public static final byte INS_ISSUE_CREDENTIAL = 0x10;
 
     /**
      * INStruction to issue the the issuer public key.
      */
-    private static final byte INS_ISSUE_PUBLIC_KEY = 0x11;
+    public static final byte INS_ISSUE_PUBLIC_KEY = 0x11;
 
     /**
      * INStruction to issue the attributes.
      */
-    private static final byte INS_ISSUE_ATTRIBUTES = 0x12;
+    public static final byte INS_ISSUE_ATTRIBUTES = 0x12;
 
     /**
      * combined hidden attributes (U).
      */
-    private static final byte INS_ISSUE_COMMITMENT = 0x1A;
+    public static final byte INS_ISSUE_COMMITMENT = 0x1A;
 
     /**
      * INStruction to receive the zero-knowledge proof for correct construction
      * of U (c, v^', s_A).
      */
-    private static final byte INS_ISSUE_COMMITMENT_PROOF = 0x1B;
+    public static final byte INS_ISSUE_COMMITMENT_PROOF = 0x1B;
 
     /**
      * INStruction to receive the second nonce (n_2).
      */
-    private static final byte INS_ISSUE_CHALLENGE = 0x1C;
+    public static final byte INS_ISSUE_CHALLENGE = 0x1C;
 
     /**
      * INStruction to send the blind signature (A, e, v'').
      */
-    private static final byte INS_ISSUE_SIGNATURE = 0x1D;
+    public static final byte INS_ISSUE_SIGNATURE = 0x1D;
 
     /**
      * INStruction to verify the signature and the zero-knowledge proof.
      */
-    private static final byte INS_ISSUE_VERIFY = 0x1F;
+    public static final byte INS_ISSUE_VERIFY = 0x1F;
 
     /**
      * INStruction to start proving attributes from a credential (and to set
      * the corresponding context).
      */
-    private static final byte INS_PROVE_CREDENTIAL = 0x20;
+    public static final byte INS_PROVE_CREDENTIAL = 0x20;
 
     /**
      * INStruction to send the challenge (m) to be signed in the proof and
      * receive the commitment for the proof (a).
      */
-    private static final byte INS_PROVE_COMMITMENT = 0x2A;
+    public static final byte INS_PROVE_COMMITMENT = 0x2A;
 
     /**
      * INStruction to receive the values A', e^ and v^.
      */
-    private static final byte INS_PROVE_SIGNATURE = 0x2B;
+    public static final byte INS_PROVE_SIGNATURE = 0x2B;
 
     /**
      * INStruction to receive the disclosed attributes (A_i).
      */
-    private static final byte INS_PROVE_ATTRIBUTE = 0x2C;
+    public static final byte INS_PROVE_ATTRIBUTE = 0x2C;
 
     /**
      * INStruction to select a credential on the card.
      */
-    private static final byte INS_ADMIN_CREDENTIAL = 0x30;
+    public static final byte INS_ADMIN_CREDENTIAL = 0x30;
 
     /**
      * INStruction to remove a credential from the card.
      */
-    private static final byte INS_ADMIN_REMOVE = 0x31;
+    public static final byte INS_ADMIN_REMOVE = 0x31;
 
     /**
      * INStruction to get an attribute from the current selected credential.
      */
-    private static final byte INS_ADMIN_ATTRIBUTE = 0x32;
+    public static final byte INS_ADMIN_ATTRIBUTE = 0x32;
 
     /**
      * INStruction to get the flags of a credential.
      */
-    private static final byte INS_ADMIN_FLAGS = 0x33;
+    public static final byte INS_ADMIN_FLAGS = 0x33;
 
     /**
      * INStruction to get a list of credentials stored on the card.
      */
-    private static final byte INS_ADMIN_CREDENTIALS = 0x3A;
+    public static final byte INS_ADMIN_CREDENTIALS = 0x3A;
 
     /**
      * INStruction to get the transaction log from the card.
      */
-    private static final byte INS_ADMIN_LOG = 0x3B;
+    public static final byte INS_ADMIN_LOG = 0x3B;
 
 
     /**
      * P1 parameter for the n value from the issuer public key.
      */
-    private static final byte P1_PUBLIC_KEY_N = 0x00;
+    public static final byte P1_PUBLIC_KEY_N = 0x00;
 
     /**
      * P1 parameter for the s value from the issuer public key.
      */
-    private static final byte P1_PUBLIC_KEY_S = 0x01;
+    public static final byte P1_PUBLIC_KEY_S = 0x01;
 
     /**
      * P1 parameter for the z value from the issuer public key.
      */
-    private static final byte P1_PUBLIC_KEY_Z = 0x02;
+    public static final byte P1_PUBLIC_KEY_Z = 0x02;
 
     /**
      * P1 parameter for the R values from the issuer public key.
      */
-    private static final byte P1_PUBLIC_KEY_R = 0x03;
+    public static final byte P1_PUBLIC_KEY_R = 0x03;
 
     /**
      * P1 parameter for the A value from a signature.
      */
-    private static final byte P1_SIGNATURE_A = 0x01;
+    public static final byte P1_SIGNATURE_A = 0x01;
 
     /**
      * P1 parameter for the e value from a signature.
      */
-    private static final byte P1_SIGNATURE_E = 0x02;
+    public static final byte P1_SIGNATURE_E = 0x02;
 
     /**
      * P1 parameter for the v value from a signature.
      */
-    private static final byte P1_SIGNATURE_V = 0x03;
+    public static final byte P1_SIGNATURE_V = 0x03;
 
     /**
      * P1 parameter for the challenge of a proof.
      */
-    private static final byte P1_SIGNATURE_PROOF_C = 0x04;
+    public static final byte P1_SIGNATURE_PROOF_C = 0x04;
 
     /**
      * P1 parameter for the s_e response of a proof.
      */
-    private static final byte P1_SIGNATURE_PROOF_S_E = 0x05;
+    public static final byte P1_SIGNATURE_PROOF_S_E = 0x05;
 
     /**
      * P1 parameter for the challenge of a proof.
      */
-    private static final byte P1_PROOF_C = 0x01;
+    public static final byte P1_PROOF_C = 0x01;
 
     /**
      * P1 parameter for the vPrimeHat response of a proof.
      */
-    private static final byte P1_PROOF_VPRIMEHAT = 0x02;
+    public static final byte P1_PROOF_VPRIMEHAT = 0x02;
 
     /**
      * P1 parameter for the sHat response of a proof.
      */
-    private static final byte P1_PROOF_SHAT = 0x03;
+    public static final byte P1_PROOF_SHAT = 0x03;
 
     /**
      * P1 parameter for the modulus of an RSA key.
      */
-    private static final byte P1_RSA_MODULUS = 0x00;
+    public static final byte P1_RSA_MODULUS = 0x00;
 
     /**
      * P1 parameter for the exponent of an RSA key.
      */
-    private static final byte P1_RSA_EXPONENT = 0x01;
+    public static final byte P1_RSA_EXPONENT = 0x01;
 
     /**
      * P2 parameter for the attribute PIN.
