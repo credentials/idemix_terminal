@@ -1,10 +1,13 @@
 package org.irmacard.idemix.util;
 
+
 public class IdemixFlags {
 
 	private short pinProtectionMask;
 	private byte RFU;
 	
+	public static final int SIZE = 3;
+
 	public IdemixFlags(byte[] flags) {
 		pinProtectionMask = getShortAt(flags, 0);
 		RFU = flags[2];
@@ -41,7 +44,7 @@ public class IdemixFlags {
 	}
 	
 	private static short getShortAt(byte[] array, int idx) {
-		return (short) ((array[idx] << 8) + array[idx + 1]);
+		return (short) (((array[idx] & 0xff) << 8) | (array[idx + 1] & 0xff));
 	}
 	
 	private static byte[] putShortAt(byte[] array, int idx, int value) {
