@@ -1,3 +1,22 @@
+/**
+ * IRMACard.java
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright (C) Wouter Lueks, Radboud University Nijmegen, December 2014.
+ */
+
 package org.irmacard.credentials.idemix.smartcard;
 
 import java.io.BufferedWriter;
@@ -6,10 +25,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
@@ -31,6 +52,10 @@ import org.irmacard.credentials.idemix.proofs.ProofD;
 import org.irmacard.credentials.idemix.proofs.ProofU;
 import org.irmacard.credentials.idemix.smartcard.PinCode.PinCodeStatus;
 import org.irmacard.idemix.IdemixSmartcard;
+import org.irmacard.idemix.util.AdminRemove;
+import org.irmacard.idemix.util.AdminSelect;
+import org.irmacard.idemix.util.IdemixFlags;
+import org.irmacard.idemix.util.IdemixLogEntry;
 import org.irmacard.idemix.util.IssuanceSetupData;
 import org.irmacard.idemix.util.VerificationSetupData;
 
@@ -40,6 +65,8 @@ import com.google.gson.GsonBuilder;
 public class IRMACard {
 	protected final static byte CLA_SECURE_MESSAGING = (byte) 0x0C;
 	protected final static byte CLA_COMMAND_CHAINING = (byte) 0x10;
+
+	protected final static int LOG_ENTRIES = 30;
 
 	enum State {
 		IDLE, APPLET_SELECTED, ISSUE, PROVE
@@ -67,7 +94,8 @@ public class IRMACard {
 	private PinCode card_pin;
 	private BigInteger master_secret;
 
-	HashMap<Short, IdemixCredential> credentials;
+	HashMap<Short, IRMAIdemixCredential> credentials;
+	List<IdemixLogEntry> logs;
 
 	// Ephemeral state
 	private State state;
@@ -84,14 +112,24 @@ public class IRMACard {
 	// Verification state
 	private VerificationState verification_state;
 	private VerificationSetupData verificationSetup;
-	private IdemixCredential credential;
+	private IRMAIdemixCredential credential;
 	private ProofD proof;
+
+	// Administration state
+	private AdminSelect adminSelect;
 
 	public IRMACard() {
 		credential_pin = new PinCode(PinCode.DEFAULT_CRED_PIN);
 		card_pin = new PinCode(PinCode.DEFAULT_CARD_PIN);
 		master_secret = null;
-		credentials = new HashMap<Short, IdemixCredential>();
+		credentials = new HashMap<Short, IRMAIdemixCredential>();
+
+		// Setup logs
+		logs = new LinkedList<IdemixLogEntry>();
+		for(int i = 0; i < LOG_ENTRIES; i++) {
+			logs.add(new IdemixLogEntry());
+		}
+
 		state = State.IDLE;
 	}
 
@@ -285,7 +323,12 @@ public class IRMACard {
 		if(credentials.containsKey(issuanceSetup.getID())) {
 			Log.info("Credential already exists, overwriting");
 			// TODO check if overwrite is allowed.
+		} else {
+			// Create new credential holder
+			credentials.put(issuanceSetup.getID(),
+					new IRMAIdemixCredential(issuanceSetup.getFlags()));
 		}
+
 
 		// Prepare temporary storage of credential
 		issuer_pk = new IdemixPublicKey(issuanceSetup.getSize() + 1);
@@ -297,7 +340,12 @@ public class IRMACard {
 
 		signature_message = new IssueSignatureMessage();
 
-		// TODO create log entry
+		// TODO get proper terminal ID
+		byte[] terminal_id = new byte[4];
+		IdemixLogEntry entry = new IdemixLogEntry(IdemixLogEntry.Action.ISSUE,
+				issuanceSetup.getTimestamp(), issuanceSetup.getID(),
+				terminal_id);
+		addLog(entry);
 
 		state = State.ISSUE;
 		issue_state = IssueState.SETUP;
@@ -531,8 +579,8 @@ public class IRMACard {
 		}
 
 		try {
-			credentials.put(issuanceSetup.getID(),
-					cred_builder.constructCredential(signature_message));
+			IdemixCredential cred = cred_builder.constructCredential(signature_message);
+			credentials.get(issuanceSetup.getID()).setCredential(cred);
 		} catch (CredentialsException e) {
 			Log.info("Incorrect: " + e.toString());
 			return sw(ISO7816.SW_DATA_INVALID);
@@ -557,12 +605,12 @@ public class IRMACard {
 	}
 
 	protected ResponseAPDU processVerificationCommand(CommandAPDU apdu) {
-		// Special case: start issuance
+		// Special case: start verification
 		if (apdu.getINS() == IdemixSmartcard.INS_PROVE_CREDENTIAL) {
 			return startVerification(apdu);
 		}
 
-		// All other issuance cases
+		// All other verification cases
 		if(state != State.PROVE || credential == null) {
 			return sw(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
 		}
@@ -592,7 +640,8 @@ public class IRMACard {
 
 		// TODO: verify policy & verify content of verificationSetup
 
-		if (!credentials.containsKey(verificationSetup.getID())) {
+		if (!credentials.containsKey(verificationSetup.getID()) ||
+				credentials.get(verificationSetup.getID()).getCredential() == null) {
 			Log.warning("Credential with id " + verificationSetup.getID() + " not found.");
 			return sw(ISO7816.SW_KEY_NOT_FOUND);
 		}
@@ -606,7 +655,13 @@ public class IRMACard {
 
 		// TODO: check if pin required, and check it
 
-		// TODO: add log entry
+		// TODO: get proper terminal ID
+		byte[] terminal_id = new byte[4];
+		IdemixLogEntry entry = new IdemixLogEntry(IdemixLogEntry.Action.VERIFY,
+				verificationSetup.getTimestamp(), verificationSetup.getID(),
+				terminal_id);
+		entry.setDisclose(verificationSetup.getDisclosureMask());
+		addLog(entry);
 
 		state = State.PROVE;
 		verification_state = VerificationState.SETUP;
@@ -628,14 +683,14 @@ public class IRMACard {
 
 		List<Integer> disclosed_attributes = new ArrayList<Integer>();
 		int mask = verificationSetup.getDisclosureMask();
-		for(int i = 0; i <= credential.getNrAttributes(); i++) {
+		for(int i = 0; i <= credential.getCredential().getNrAttributes(); i++) {
 			if((mask & 0x01) == 0x01) {
 				disclosed_attributes.add(i);
 			}
 			mask = mask >> 1;
 		}
-		proof = credential.createDisclosureProof(disclosed_attributes,
-				verificationSetup.getContext(), nonce1);
+		proof = credential.getCredential().createDisclosureProof(
+				disclosed_attributes, verificationSetup.getContext(), nonce1);
 
 		if(verification_state == VerificationState.SETUP) {
 			verification_state = VerificationState.COMMITTED;
@@ -686,7 +741,7 @@ public class IRMACard {
 			return sw(ISO7816.SW_WRONG_LENGTH);
 		}
 
-		if(apdu.getP1() > credential.getNrAttributes()) {
+		if(apdu.getP1() > credential.getCredential().getNrAttributes()) {
 			return sw(ISO7816.SW_WRONG_P1P2);
 		}
 
@@ -714,7 +769,7 @@ public class IRMACard {
 			return false;
 		}
 
-		if((mask & (0xffff << (credential.getNrAttributes() + 1))) != 0) {
+		if((mask & (0xffff << (credential.getCredential().getNrAttributes() + 1))) != 0) {
 			Log.warning("Disclosing non-existing attribute");
 			return false;
 		}
@@ -723,7 +778,163 @@ public class IRMACard {
  	}
 
 	protected ResponseAPDU processAdministrationCommand(CommandAPDU apdu) {
+		// You should enter card pin before doing any administration operation
+		if(!card_pin.verified()) {
+			Log.warning("Administration started without entering PIN");
+			return sw(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+		}
+
+		switch((byte) apdu.getINS()) {
+		case IdemixSmartcard.INS_ADMIN_CREDENTIALS:
+			return processAdministrationCredentials(apdu);
+		case IdemixSmartcard.INS_ADMIN_CREDENTIAL:
+			return processAdministrationSelectCredential(apdu);
+		case IdemixSmartcard.INS_ADMIN_ATTRIBUTE:
+			return processAdministrationGetAttribute(apdu);
+		case IdemixSmartcard.INS_ADMIN_REMOVE:
+			return processAdministrationRemove(apdu);
+		case IdemixSmartcard.INS_ADMIN_FLAGS:
+			return processAdministrationFlags(apdu);
+		case IdemixSmartcard.INS_ADMIN_LOG:
+			return processAdministrationLog(apdu);
+		}
+
 		return sw(ISO7816.SW_FUNC_NOT_SUPPORTED);
+	}
+
+	protected ResponseAPDU processAdministrationCredentials(CommandAPDU apdu) {
+		ByteBuffer buffer = ByteBuffer.allocate(2 * credentials.values().size());
+
+		if(apdu.getP1() != 0 || apdu.getP2() != 0) {
+			return sw(ISO7816.SW_WRONG_P1P2);
+		}
+
+		for(short id : credentials.keySet()) {
+			buffer.putShort(id);
+		}
+		return data(buffer.array());
+	}
+
+	protected ResponseAPDU processAdministrationSelectCredential(CommandAPDU apdu) {
+		if(apdu.getP1() != 0 || apdu.getP2() != 0) {
+			return sw(ISO7816.SW_WRONG_P1P2);
+		}
+
+		if(apdu.getData().length != AdminSelect.SIZE) {
+			return sw(ISO7816.SW_WRONG_LENGTH);
+		}
+
+		adminSelect = new AdminSelect(apdu.getData());
+		if(credentials.containsKey(adminSelect.getID())) {
+			return sw(ISO7816.SW_NO_ERROR);
+		} else {
+			adminSelect = null;
+			return sw(ISO7816.SW_KEY_NOT_FOUND);
+		}
+	}
+
+	protected ResponseAPDU processAdministrationGetAttribute(CommandAPDU apdu) {
+		if(adminSelect == null) {
+			return sw(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+		}
+
+		// TODO: need to do a signed check for P1 here, maybe also elsewhere?
+		if(apdu.getP1() <= 0 || apdu.getP2() != 0) {
+			return sw(ISO7816.SW_WRONG_P1P2);
+		}
+
+		IdemixCredential cred = credentials.get(adminSelect.getID()).getCredential();
+		if(apdu.getP1() > cred.getNrAttributes()) {
+			return sw(ISO7816.SW_RECORD_NOT_FOUND);
+		}
+
+		if(apdu.getData().length != 0) {
+			return sw(ISO7816.SW_WRONG_LENGTH);
+		}
+
+		return data(IdemixSmartcard.fixLength(cred.getAttribute(apdu.getP1()),
+				params.l_m));
+	}
+
+	protected ResponseAPDU processAdministrationRemove(CommandAPDU apdu) {
+		if(adminSelect == null) {
+			return sw(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+		}
+
+		if(apdu.getP1() != 0 || apdu.getP2() != 0) {
+			return sw(ISO7816.SW_WRONG_P1P2);
+		}
+
+		if(apdu.getData().length != AdminRemove.SIZE) {
+			return sw(ISO7816.SW_WRONG_LENGTH);
+		}
+
+		AdminRemove remove_data = new AdminRemove(apdu.getData());
+
+		// TODO: get proper terminal_id
+		byte[] terminal_id = new byte[4];
+		IdemixLogEntry entry = new IdemixLogEntry(IdemixLogEntry.Action.REMOVE,
+				remove_data.getTimeStamp(), adminSelect.getID(), terminal_id);
+		addLog(entry);
+
+		Log.info("Removing credential " + adminSelect.getID());
+		credentials.remove(adminSelect.getID());
+		return sw(ISO7816.SW_NO_ERROR);
+	}
+
+	protected ResponseAPDU processAdministrationFlags(CommandAPDU apdu) {
+		if(adminSelect == null) {
+			return sw(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+		}
+
+		if(apdu.getP1() != 0 || apdu.getP2() != 0) {
+			return sw(ISO7816.SW_WRONG_P1P2);
+		}
+
+		/*
+		 * TODO: check IRMACard.c, it seems that it is only possible to set the
+		 * flags find out what the intention is and fix card implementation. I'm
+		 * going to assume two options: (1) data of length IdemixFlags is sent,
+		 * we set userFlags using this data or (2) no data is sent, return both
+		 * flags.
+		 */
+
+		IRMAIdemixCredential cred = credentials.get(adminSelect.getID());
+
+		switch(apdu.getData().length) {
+		case(0):
+			Log.info("Return IRMA flags");
+			ByteBuffer buffer = ByteBuffer.allocate(2*IdemixFlags.SIZE);
+			buffer.put(cred.getUserFlags().getFlagBytes());
+			buffer.put(cred.getIssuerFlags().getFlagBytes());
+			return data(buffer.array());
+		case(IdemixFlags.SIZE):
+			Log.info("Setting user flags");
+			cred.setUserFlags(new IdemixFlags(apdu.getData()));
+			return sw(ISO7816.SW_NO_ERROR);
+		default:
+			Log.warning("Wrong length");
+			return sw(ISO7816.SW_WRONG_LENGTH);
+		}
+	}
+
+	protected ResponseAPDU processAdministrationLog(CommandAPDU apdu) {
+		if(apdu.getP2() != 0) {
+			return sw(ISO7816.SW_WRONG_P1P2);
+		}
+
+		if(apdu.getData().length != 0) {
+			return sw(ISO7816.SW_WRONG_LENGTH);
+		}
+
+		// TODO: write test to confirm working of log
+
+		ByteBuffer buffer = ByteBuffer.allocate((255 / IdemixLogEntry.SIZE) * IdemixLogEntry.SIZE);
+		for (int i = 0; i < 255 / IdemixLogEntry.SIZE; i++) {
+			buffer.put(logs.get((i + apdu.getP1()) % LOG_ENTRIES).getBytes());
+		}
+
+		return data(buffer.array());
 	}
 
 	public void storeState(Path cardStoragePath) {
@@ -745,6 +956,11 @@ public class IRMACard {
 	//
 	// HELPER FUNCTIONS
 	//
+
+	protected void addLog(IdemixLogEntry entry) {
+		logs.add(0, entry);
+		logs.remove(logs.size() - 1);
+	}
 
 	protected ResponseAPDU sw_counter(int counter) {
 		return sw((short) (0x63C0 + (counter & 0xf)));
@@ -772,6 +988,4 @@ public class IRMACard {
 
 		return new byte[] {msbyte, lsbyte};
 	}
-
-
 }
