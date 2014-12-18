@@ -114,6 +114,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -134,6 +135,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -168,6 +170,7 @@ public class TestIRMACredential {
 		} else {
 			System.out.println("Proof verified");
 		}
+		service.close();
 	}
 
 	@Test
@@ -188,6 +191,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -207,6 +211,7 @@ public class TestIRMACredential {
 				throw e;
 			}
 		}
+		is.close();
 	}
 
 	@Test
@@ -223,6 +228,7 @@ public class TestIRMACredential {
 		Attributes attributes = getStudentCardAttributes();
 
 		ic.issue(spec, isk, attributes, null);
+		is.close();
 	}
 
 	@Test
@@ -231,7 +237,8 @@ public class TestIRMACredential {
 		VerifyCredentialInformation vci = new VerifyCredentialInformation("RU", "studentCardAll");
 		IdemixVerifySpecification vspec = vci.getIdemixVerifySpecification();
 
-		IdemixCredentials ic = new IdemixCredentials(TestSetup.getCardService());
+		CardService cs = TestSetup.getCardService();
+		IdemixCredentials ic = new IdemixCredentials(cs);
 
 		Attributes attr = ic.verify(vspec);
 
@@ -242,6 +249,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -262,6 +270,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -281,6 +290,7 @@ public class TestIRMACredential {
 				throw e;
 			}
 		}
+		is.close();
 	}
 
 	@Test
@@ -296,6 +306,7 @@ public class TestIRMACredential {
 		is.sendPin(TestSetup.DEFAULT_CRED_PIN);
 		Attributes attributes = getAgeAttributes();
 		ic.issue(spec, isk, attributes, null);
+		is.close();
 	}
 
 	@Test
@@ -316,6 +327,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -336,6 +348,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -356,6 +369,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -375,6 +389,7 @@ public class TestIRMACredential {
 				throw e;
 			}
 		}
+		is.close();
 	}
 
 	@Test
@@ -390,6 +405,7 @@ public class TestIRMACredential {
 		is.sendPin(TestSetup.DEFAULT_CRED_PIN);
 		Attributes attributes = getAddressNijmegenAttributes();
 		ic.issue(spec, isk, attributes, null);
+		is.close();
 	}
 
 	@Test
@@ -409,6 +425,7 @@ public class TestIRMACredential {
 				throw e;
 			}
 		}
+		is.close();
 	}
 
 	@Test
@@ -424,6 +441,7 @@ public class TestIRMACredential {
 		Attributes attributes = getAddressReuverAttributes();
 		spec.setCardVersion(is.getCardVersion());
 		ic.issue(spec, isk, attributes, null);
+		is.close();
 	}
 
 	@Test
@@ -444,6 +462,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -464,6 +483,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	@Test
@@ -483,6 +503,7 @@ public class TestIRMACredential {
 				throw e;
 			}
 		}
+		is.close();
 	}
 
 	@Test
@@ -713,6 +734,7 @@ public class TestIRMACredential {
 		ic.connect();
 		is.sendPin(TestSetup.DEFAULT_CRED_PIN);
 		ic.issue(spec, isk, attributes, null);
+		is.close();
 	}
 
 	private void verify(VerifyCredentialInformation vci) throws CardException, CredentialsException {
@@ -730,6 +752,7 @@ public class TestIRMACredential {
 		}
 
 		attr.print();
+		cs.close();
 	}
 
 	private void remove(CredentialDescription cd) throws CardException, CredentialsException, CardServiceException, InfoException {
@@ -745,6 +768,7 @@ public class TestIRMACredential {
 				throw e;
 			}
 		}
+		is.close();
 	}
 
     private Attributes getStudentCardAttributes() {
