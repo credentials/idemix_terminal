@@ -24,7 +24,7 @@ import java.io.Serializable;
 import net.sourceforge.scuba.util.Hex;
 
 public class CardVersion implements Comparable<CardVersion>, Serializable {
-	
+
 	private static final long serialVersionUID = 3887160109187109660L;
 
 	public enum Type { BUILD, DEBUG, REV, ALPHA, BETA, CANDIDATE, RELEASE };
@@ -33,7 +33,7 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 	private int minor = 0;
 	private Integer maint = null;
 	private Integer build = null;
-	
+
 	private String extra = null;
 	private Integer count = null;
 	private byte[] data = null;
@@ -41,7 +41,7 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 
 	/**
 	 * Constructor which gets all elements as separate variables.
-	 * 
+	 *
 	 * @param majresponse
 	 * @param min
 	 * @param mnt
@@ -60,7 +60,7 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 
 	/**
 	 * Constructor which gets all elements as an ASN.1 encoded bytearray.
-	 * 
+	 *
 	 * @param version
 	 */
 	public CardVersion(byte[] version) {
@@ -76,32 +76,32 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
             major = version[1];
             minor = version[2];
             maint = (int) version[3];
-            
+
         // 0.8 and newer
         } else {
 			int i = 6;
-			
+
 			// Major
 			major = version[i++];
-			
+
 			// Minor
-			if (i < version.length && version[i] == 0x02) {		
+			if (i < version.length && version[i] == 0x02) {
 				i += 2;
-				minor = version[i++];			
+				minor = version[i++];
 			}
-			
+
 			// Maintenance
 			if (i < version.length && version[i] == 0x02) {
 				i += 2;
-				maint = (int) version[i++];			
+				maint = (int) version[i++];
 			}
-			
+
 			// Build
 			if (i < version.length && version[i] == 0x02) {
 				i += 2;
-				build = (int) version[i++];			
+				build = (int) version[i++];
 			}
-			
+
 			// Extra
 			if (i < version.length && version[i++] == 0x10) {
 				i += 2;
@@ -116,13 +116,13 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 					extra = new String(str);
 				}
 				i += length;
-			
+
 				// Counter
 				if (i < version.length && version[i] == 0x02) {
 					i += 2;
 					count = (int) version[i++];
 				}
-				
+
 				// Extra data
 				if (i < version.length && version[i] == 0x04) {
 					length = version[i++];
@@ -175,23 +175,23 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 	public Integer getCounter() {
 		return count;
 	}
-	
+
 	public String getExtra() {
 		String version = extra;
-		
+
 		if (count != null) {
 			version += count;
 		}
 		if (data != null && data.length > 0) {
 			version += " " + Hex.toHexString(data);
 		}
-		
+
 		return version;
 	}
 
 	public Type getType() {
 		Type type = Type.RELEASE;
-		
+
 		if (extra != null) {
 			if (extra.contains("build")) {
 				type = Type.BUILD;
@@ -215,26 +215,26 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 
 		return type;
 	}
-	
+
 	public int compareTo(CardVersion c) {
 		int comp = major - c.major;
 		if (comp != 0) return comp;
-		
+
 		comp = minor - c.minor;
 		if (comp != 0) return comp;
-		
+
 		comp = compareInteger(maint, c.maint);
 		if (comp != 0) return comp;
-		
+
 		comp = compareInteger(build, c.build);
 		if (comp != 0) return comp;
-		
+
 		comp = getType().compareTo(c.getType());
 		if (comp != 0) return comp;
-		
+
 		comp = compareInteger(count, c.count);
 		if (comp != 0) return comp;
-		
+
 		return 0;
 	}
 
@@ -253,25 +253,25 @@ public class CardVersion implements Comparable<CardVersion>, Serializable {
 	public boolean newer(CardVersion c) {
 		return compareTo(c) > 0;
 	}
-	
+
 	public boolean older(CardVersion c) {
 		return compareTo(c) < 0;
 	}
 
-	public String toString() {		
+	public String toString() {
 		String version = major + "." + minor;
-		
+
 		if (maint != null) {
 			version += "." + maint;
 			if (build != null) {
 				version += "." + build;
 			}
 		}
-		
+
 		if (extra != null) {
 			version += " " + getExtra();
 		}
-		
+
 		return version;
 	}
 }
