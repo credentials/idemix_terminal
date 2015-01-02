@@ -1,19 +1,19 @@
 /**
  * IdemixCredentials.java
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) Pim Vullers, Radboud University Nijmegen, May 2012,
  * Copyright (C) Wouter Lueks, Radboud University Nijmegen, July 2012.
  */
@@ -24,10 +24,12 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.Vector;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.ProtocolCommand;
 import net.sourceforge.scuba.smartcards.ProtocolCommands;
 import net.sourceforge.scuba.smartcards.ProtocolResponses;
 
@@ -35,35 +37,30 @@ import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.BaseCredentials;
 import org.irmacard.credentials.CredentialsException;
 import org.irmacard.credentials.Nonce;
+import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
+import org.irmacard.credentials.idemix.irma.IRMAIdemixDisclosureProof;
 import org.irmacard.credentials.idemix.spec.IdemixIssueSpecification;
 import org.irmacard.credentials.idemix.spec.IdemixVerifySpecification;
 import org.irmacard.credentials.idemix.util.CredentialInformation;
-import org.irmacard.credentials.idemix.util.IdemixVersion;
 import org.irmacard.credentials.info.AttributeDescription;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
+import org.irmacard.credentials.info.VerificationDescription;
 import org.irmacard.credentials.keys.PrivateKey;
 import org.irmacard.credentials.spec.IssueSpecification;
 import org.irmacard.credentials.spec.VerifySpecification;
-import org.irmacard.credentials.util.CardVersion;
 import org.irmacard.credentials.util.log.IssueLogEntry;
 import org.irmacard.credentials.util.log.LogEntry;
 import org.irmacard.credentials.util.log.RemoveLogEntry;
 import org.irmacard.credentials.util.log.VerifyLogEntry;
 import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.IdemixSmartcard;
+import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixLogEntry;
 
 import com.ibm.zurich.idmx.issuance.Issuer;
 import com.ibm.zurich.idmx.issuance.Message;
-import com.ibm.zurich.idmx.showproof.Proof;
-import com.ibm.zurich.idmx.showproof.Verifier;
-import com.ibm.zurich.idmx.showproof.predicates.CLPredicate;
-import com.ibm.zurich.idmx.showproof.predicates.Predicate;
-import com.ibm.zurich.idmx.showproof.predicates.Predicate.PredicateType;
-import com.ibm.zurich.idmx.utils.Constants;
-import com.ibm.zurich.idmx.utils.SystemParameters;
 
 /**
  * An Idemix specific implementation of the credentials interface.
@@ -80,7 +77,7 @@ public class IdemixCredentials extends BaseCredentials {
 		}
 	}
 
-	public void connect() 
+	public void connect()
 	throws CredentialsException {
 		try {
 			service.open();
@@ -88,12 +85,12 @@ public class IdemixCredentials extends BaseCredentials {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Issue a credential to the user according to the provided specification
 	 * containing the specified values.
-	 * 
-	 * This method requires the Idemix application to be selected and the card 
+	 *
+	 * This method requires the Idemix application to be selected and the card
 	 * holder to be verified (if this is required by the card).
 	 *
 	 * @param specification
@@ -140,7 +137,7 @@ public class IdemixCredentials extends BaseCredentials {
 	/**
 	 * Get a blank IssueSpecification matching this Credentials provider.
 	 * TODO: Proper implementation or remove it.
-	 * 
+	 *
 	 * @return a blank specification matching this provider.
 	 */
 	public IssueSpecification issueSpecification() {
@@ -159,29 +156,23 @@ public class IdemixCredentials extends BaseCredentials {
 
 	/**
 	 * Verify a number of attributes listed in the specification.
-	 * 
-	 * @param specification
-	 *            of the credential and attributes to be verified.
+	 *
+	 * @param desc The VerificationDescription of the credential to be verified
 	 * @return the attributes disclosed during the verification process or null
 	 *         if verification failed
 	 * @throws CredentialsException
 	 */
-	public Attributes verify(VerifySpecification specification)
+	public Attributes verify(IdemixVerificationDescription desc)
 			throws CredentialsException {
 		verifyPrepare();
 
-		IdemixVerifySpecification spec = castVerifySpecification(specification);
-		spec.setCardVersion(service.getCardVersion());
-//		BigInteger context = Utils.computeRandomNumber(spec.getProofSpec().getGroupParams().getSystemParams().getL_H());
-//		spec.setContext(context);
-
-		// Get a nonce from the verifier
-		Nonce nonce = generateNonce(specification);
+		CardVersion cv = service.getCardVersion();
+		BigInteger nonce = desc.generateNonce();
 
 		// Run the protocol
 		try {
-			return verifyProofResponses(spec, nonce,
-					service.execute(requestProofCommands(specification, nonce)));
+			return verifyProofResponses(desc, nonce,
+					service.execute(IdemixSmartcard.buildProofCommands(cv, nonce, desc)));
 		} catch (CardServiceException e) {
 			throw new CredentialsException("Verification encountered error", e);
 		}
@@ -190,7 +181,7 @@ public class IdemixCredentials extends BaseCredentials {
 	/**
 	 * Get a blank VerifySpecification matching this Credentials provider. TODO:
 	 * proper implementation or remove it
-	 * 
+	 *
 	 * @return a blank specification matching this provider.
 	 */
 	@Override
@@ -198,69 +189,20 @@ public class IdemixCredentials extends BaseCredentials {
 		return null;
 	}
 
-	@Override
 	public ProtocolCommands requestProofCommands(
-			VerifySpecification specification, Nonce nonce)
-			throws CredentialsException {
-		IdemixVerifySpecification spec = castVerifySpecification(specification);
-		IdemixNonce n = castNonce(nonce);
-		return IdemixSmartcard.buildProofCommands(spec.getCardVersion(), n.getNonce(),
-				spec.getProofSpec(), spec.getIdemixId());
+			IdemixVerificationDescription vd, BigInteger nonce) {
+		return IdemixSmartcard.buildProofCommands(service.getCardVersion(), nonce, vd);
 	}
 
-	@Override
-	public Attributes verifyProofResponses(VerifySpecification specification,
-			Nonce nonce, ProtocolResponses responses)
+	public Attributes verifyProofResponses(IdemixVerificationDescription vd,
+			BigInteger nonce, ProtocolResponses responses)
 			throws CredentialsException {
-		IdemixVerifySpecification spec = castVerifySpecification(specification);
-		IdemixNonce n = castNonce(nonce);
 
-		// Create the proof
-		Proof proof = IdemixSmartcard.processBuildProofResponses(spec.getCardVersion(), responses,
-				spec.getProofSpec());
-		if (proof == null) {
-			throw new CredentialsException("Failed to generate proof.");
-		}
-		// Initialize the verifier and verify the proof
-		Verifier verifier = new Verifier(spec.getProofSpec(), proof,
-				n.getNonce());
-		if (!verifier.verify()) {
-			return null;
-		}
+		IRMAIdemixDisclosureProof proof = IdemixSmartcard
+				.processBuildProofResponses(service.getCardVersion(),
+						responses, vd);
 
-		// Return the attributes that have been revealed during the proof
-		Attributes attributes = new Attributes();
-		HashMap<String, BigInteger> values = verifier.getRevealedValues();
-
-		// First determine the prefix that needs to be stripped from the name
-		String prefix = "";
-		for (Predicate pred : spec.getProofSpec().getPredicates()) {
-			if (pred.getPredicateType() == PredicateType.CL) {
-				prefix = ((CLPredicate) pred).getTempCredName() + Constants.DELIMITER;
-				break;
-			}
-		}
-
-		// Store the attributes
-		for (String id : values.keySet()) {
-			String name = id.replace(prefix, "");
-			attributes.add(name, values.get(id).toByteArray());
-		}
-
-		// Verify validity
-		if (!attributes.isValid()) {
-			System.err.println("Credential expired!");
-			throw new CredentialsException("The credential has expired.");
-		}
-
-		// Verify credential id (it is set if it doesn't return 0)
-		if (attributes.getCredentialID() != 0
-				&& !(attributes.getCredentialID() == spec.getIdemixId())) {
-			System.err.println("Credential id does not match!");
-			throw new CredentialsException("The credential id does not match.");
-		}
-
-		return attributes;
+		return proof.verify(vd, nonce);
 	}
 
 	/**
@@ -299,7 +241,7 @@ public class IdemixCredentials extends BaseCredentials {
 	/**
 	 * Second part of issuing. Just like the first part still in flux. Note how
 	 * we can immediately process the responses as well as create new commands.
-	 * 
+	 *
 	 * @throws CredentialsException
 	 */
 	public ProtocolCommands requestIssueRound3Commands(IssueSpecification ispec, Attributes attributes, Issuer issuer, ProtocolResponses responses)
@@ -317,24 +259,20 @@ public class IdemixCredentials extends BaseCredentials {
 		return IdemixSmartcard.round3Commands(spec.getCardVersion(), spec.getIssuanceSpec(), msgToRecipient2);
 	}
 
-	@Override
-	public Nonce generateNonce(VerifySpecification specification)
-			throws CredentialsException {
-		IdemixVerifySpecification spec = castVerifySpecification(specification);
+	public BigInteger generateNonce(VerificationDescription cd) {
+		// TODO: extract public key from credential description
+		IdemixSystemParameters params = new IdemixSystemParameters();
 
-		SystemParameters sp = spec.getProofSpec().getGroupParams()
-				.getSystemParams();
-		BigInteger nonce = Verifier.getNonce(sp);
-
-		return new IdemixNonce(nonce);
+		Random rnd = new Random();
+		return new BigInteger(params.l_statzk, rnd);
 	}
-	
+
 	/**
 	 * Get the attribute values stored on the card for the given credential.
-	 *  
+	 *
 	 * @param credential identifier.
 	 * @return attributes for the given credential.
-	 * @throws CardServiceException 
+	 * @throws CardServiceException
 	 */
 	public Attributes getAttributes(CredentialDescription cd) throws CardServiceException {
 		// FIXME: for now retrieve this here, but this does mean that these files get
@@ -352,7 +290,7 @@ public class IdemixCredentials extends BaseCredentials {
 		}
 		return attr;
 	}
-	
+
 	public void removeCredential(CredentialDescription cd) throws CardServiceException {
 		service.selectCredential(cd.getId());
 		service.removeCredential(cd.getId());
@@ -360,17 +298,17 @@ public class IdemixCredentials extends BaseCredentials {
 
 	/**
 	 * Get a list of credentials available on the card.
-	 * 
+	 *
 	 * @return list of credential identifiers.
-	 * @throws CardServiceException 
-	 * @throws InfoException 
+	 * @throws CardServiceException
+	 * @throws InfoException
 	 */
 	public List<CredentialDescription> getCredentials() throws CardServiceException, InfoException {
 		Vector<Integer> credentialIDs = service.getCredentials();
-		
+
 		List<CredentialDescription> credentialList = new Vector<CredentialDescription>();;
 		DescriptionStore ds = DescriptionStore.getInstance();
-		
+
 		for(Integer id : credentialIDs) {
 			CredentialDescription cd = ds.getCredentialDescription(id.shortValue());
 			if(cd != null) {
@@ -379,7 +317,7 @@ public class IdemixCredentials extends BaseCredentials {
 				throw new InfoException("Description for credential with ID=" + id + " not found");
 			}
 		}
-		
+
 		return credentialList;
 	}
 
@@ -475,6 +413,29 @@ public class IdemixCredentials extends BaseCredentials {
 	}
 
 	public CardVersion getCardVersion() {
-		return new IdemixVersion(service.getCardVersion());
+		return service.getCardVersion();
+	}
+
+	@Override
+	public Nonce generateNonce(VerifySpecification specification)
+			throws CredentialsException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<ProtocolCommand> requestProofCommands(
+			VerifySpecification specification, Nonce nonce)
+			throws CredentialsException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Attributes verifyProofResponses(VerifySpecification specification,
+			Nonce nonce, ProtocolResponses responses)
+			throws CredentialsException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

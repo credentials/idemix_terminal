@@ -23,6 +23,7 @@ package org.irmacard.credentials.idemix;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.math.BigInteger;
 import java.net.URI;
 
 import javax.smartcardio.CardException;
@@ -35,15 +36,14 @@ import net.sourceforge.scuba.smartcards.ProtocolResponses;
 
 import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.CredentialsException;
-import org.irmacard.credentials.Nonce;
 import org.irmacard.credentials.idemix.categories.IssueTest;
 import org.irmacard.credentials.idemix.categories.RemovalTest;
 import org.irmacard.credentials.idemix.categories.VerificationTest;
+import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
+import org.irmacard.credentials.idemix.info.IdemixKeyStore;
 import org.irmacard.credentials.idemix.spec.IdemixIssueSpecification;
-import org.irmacard.credentials.idemix.spec.IdemixVerifySpecification;
 import org.irmacard.credentials.idemix.util.CredentialInformation;
 import org.irmacard.credentials.idemix.util.IssueCredentialInformation;
-import org.irmacard.credentials.idemix.util.VerifyCredentialInformation;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
@@ -64,6 +64,8 @@ public class TestIRMACredential {
 		CredentialInformation.setCoreLocation(core);
 		DescriptionStore.setCoreLocation(core);
 		DescriptionStore.getInstance();
+		IdemixKeyStore.setCoreLocation(core);
+		IdemixKeyStore.getInstance();
 	}
 
 	@Test
@@ -102,8 +104,8 @@ public class TestIRMACredential {
 	@Test
 	@Category(VerificationTest.class)
 	public void verifyRootCredentialAsync() throws CredentialsException, CardException, CardServiceException, InfoException {
-		VerifyCredentialInformation vci = new VerifyCredentialInformation("Surfnet", "rootNone");
-		IdemixVerifySpecification vspec = vci.getIdemixVerifySpecification();
+		IdemixVerificationDescription vd =
+				new IdemixVerificationDescription("Surfnet", "rootNone");
 		IdemixCredentials ic = new IdemixCredentials(null);
 
 		// Open channel to card
@@ -114,17 +116,16 @@ public class TestIRMACredential {
 		ProtocolResponse select_response = service.execute(
 				IdemixSmartcard.selectApplicationCommand);
 		CardVersion cv = new CardVersion(select_response.getData());
-		vspec.setCardVersion(cv);
 
 		// Generate a nonce (you need this for verification as well)
-		Nonce nonce = ic.generateNonce(vspec);
+		BigInteger nonce = vd.generateNonce();
 
 		// Get prove commands, and send them to card
-		ProtocolCommands commands = ic.requestProofCommands(vspec, nonce);
+		ProtocolCommands commands = ic.requestProofCommands(vd, nonce);
 		ProtocolResponses responses = service.execute(commands);
 
 		// Process the responses
-		Attributes attr = ic.verifyProofResponses(vspec, nonce, responses);
+		Attributes attr = ic.verifyProofResponses(vd, nonce, responses);
 
 		if (attr == null) {
 			fail("The proof does not verify");
@@ -447,17 +448,15 @@ public class TestIRMACredential {
 
 	private void verify(String verifier, String verification_spec)
 			throws CardException, CredentialsException, InfoException {
-		verify(new VerifyCredentialInformation(verifier, verification_spec));
+		verify(new IdemixVerificationDescription(verifier, verification_spec));
 	}
 
-	private void verify(VerifyCredentialInformation vci) throws CardException,
+	private void verify(IdemixVerificationDescription vd) throws CardException,
 			CredentialsException {
-		IdemixVerifySpecification vspec = vci.getIdemixVerifySpecification();
-
 		CardService cs = TestSetup.getCardService();
 		IdemixCredentials ic = new IdemixCredentials(cs);
 
-		Attributes attr = ic.verify(vspec);
+		Attributes attr = ic.verify(vd);
 
 		if (attr == null) {
 			fail("The proof does not verify");

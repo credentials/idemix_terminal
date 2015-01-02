@@ -22,10 +22,12 @@ package org.irmacard.idemix.util;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
+import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.idemix.IdemixSmartcard;
 
 public class VerificationSetupData {
 	// TODO: reference IdemixSystemParameters after fixing dependencies
+	// TODO: in fact, this depends on the specific parameter set
 	public static final int SIZE_CONTEXT = 32;
 
 	public static final int SIZE_CRED_ID = 2;
@@ -46,6 +48,13 @@ public class VerificationSetupData {
 		this.timestamp = timestamp;
 	}
 
+	public VerificationSetupData(IdemixVerificationDescription vd, int timestamp) {
+		this.cred_id = vd.getVerificationDescription().getCredentialDescription().getId();
+		this.mask = vd.getDisclosureMask();
+		this.context = vd.getContext();
+		this.timestamp = timestamp;
+	}
+
 	public VerificationSetupData(byte[] data) {
 		ByteBuffer buffer = ByteBuffer.wrap(data);
 
@@ -59,12 +68,22 @@ public class VerificationSetupData {
 		timestamp = buffer.getInt();
 	}
 
-	public byte[] getBytes() {
+	public byte[] getBytes(CardVersion cv) {
 		ByteBuffer buffer = ByteBuffer.allocate(SIZE);
 
-		return buffer.putShort(cred_id).putShort(mask)
-				.put(IdemixSmartcard.fixLength(context, SIZE_CONTEXT * 8))
-				.putInt(timestamp).array();
+		if (cv == null || cv.newer(new CardVersion(0, 7, 2))) {
+			return buffer.putShort(cred_id).putShort(mask)
+					.put(IdemixSmartcard.fixLength(context, SIZE_CONTEXT * 8))
+					.putInt(timestamp).array();
+		} else {
+			return buffer.putShort(cred_id)
+					.put(IdemixSmartcard.fixLength(context, SIZE_CONTEXT * 8))
+					.putShort(mask).putInt(timestamp).array();
+		}
+	}
+
+	public byte[] getBytes() {
+		return getBytes(null);
 	}
 
 	public short getID() {

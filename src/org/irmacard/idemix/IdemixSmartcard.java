@@ -28,6 +28,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -38,25 +39,22 @@ import net.sourceforge.scuba.smartcards.ProtocolCommands;
 import net.sourceforge.scuba.smartcards.ProtocolErrors;
 import net.sourceforge.scuba.smartcards.ProtocolResponses;
 
+import org.irmacard.credentials.idemix.IdemixPublicKey;
+import org.irmacard.credentials.idemix.IdemixSystemParameters;
+import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
+import org.irmacard.credentials.idemix.irma.IRMAIdemixDisclosureProof;
 import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
+import org.irmacard.idemix.util.VerificationSetupData;
 
 import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
-import com.ibm.zurich.idmx.dm.structure.CredentialStructure;
 import com.ibm.zurich.idmx.issuance.IssuanceSpec;
 import com.ibm.zurich.idmx.issuance.Message;
 import com.ibm.zurich.idmx.issuance.Message.IssuanceProtocolValues;
 import com.ibm.zurich.idmx.key.IssuerPublicKey;
-import com.ibm.zurich.idmx.showproof.Identifier;
 import com.ibm.zurich.idmx.showproof.Proof;
-import com.ibm.zurich.idmx.showproof.ProofSpec;
-import com.ibm.zurich.idmx.showproof.predicates.CLPredicate;
-import com.ibm.zurich.idmx.showproof.predicates.Predicate;
-import com.ibm.zurich.idmx.showproof.predicates.Predicate.PredicateType;
 import com.ibm.zurich.idmx.showproof.sval.SValue;
-import com.ibm.zurich.idmx.showproof.sval.SValuesProveCL;
-import com.ibm.zurich.idmx.utils.StructureStore;
 import com.ibm.zurich.idmx.utils.SystemParameters;
 
 /**
@@ -352,9 +350,13 @@ public class IdemixSmartcard {
     }
 
     private static byte[] addTimeStamp(byte[] argument) {
-        int time = (int) ((new Date()).getTime() / 1000);
+        int time = getTimeStamp();
         return ByteBuffer.allocate(argument.length + 4).put(argument)
                 .putInt(time).array();
+    }
+
+    private static int getTimeStamp() {
+    	return (int) ((new Date()).getTime() / 1000);
     }
 
     /**************************************************************************/
@@ -498,35 +500,16 @@ public class IdemixSmartcard {
      * @param id id of credential
      * @return
      */
-    public static ProtocolCommand startProofCommand(CardVersion cv, ProofSpec spec, short id, short D) {
-        int l_H = spec.getGroupParams().getSystemParams().getL_H();
+	public static ProtocolCommand startProofCommand(CardVersion cv,
+			IdemixVerificationDescription vd) {
+		byte[] data = new VerificationSetupData(vd, getTimeStamp())
+				.getBytes(cv);
 
-        byte[] data;
-        if (cv.newer(new CardVersion(0,7,2))) {
-            data = new byte[4 + l_H/8];
-            data[0] = (byte) (id >> 8);
-            data[1] = (byte) (id & 0xff);
-            data[2] = (byte) (D >> 8);
-            data[3] = (byte) (D & 0xff);
-            System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 4, l_H/8);
-        } else {
-            data = new byte[2 + l_H/8 + 2];
-            data[0] = (byte) (id >> 8);
-            data[1] = (byte) (id & 0xff);
-            System.arraycopy(fixLength(spec.getContext(), l_H), 0, data, 2, l_H/8);
-            data[l_H/8 + 2] = (byte) (D >> 8);
-            data[l_H/8 + 3] = (byte) (D & 0xff);
-        }
-        data = addTimeStamp(data);
-
-        return new ProtocolCommand(
-                                "startprove",
-                                "Start credential proof.",
-                                new CommandAPDU(
-                                    CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00, data),
-                        new ProtocolErrors(
-                                    0x00006A88,"Credential not found."));
-    }
+		return new ProtocolCommand("startprove", "Start credential proof.",
+				new CommandAPDU(CLA_IRMACARD, INS_PROVE_CREDENTIAL, 0x00, 0x00,
+						data), new ProtocolErrors(0x00006A88,
+						"Credential not found."));
+	}
 
     public static ProtocolCommands generateMasterSecretCommand(CardVersion cv) {
         ProtocolCommands commands = new ProtocolCommands();
@@ -639,6 +622,7 @@ public class IdemixSmartcard {
         int L_m = spec.getPublicKey().getGroupParams().getSystemParams().getL_m();
         int i = 1;
         for (AttributeStructure struct : structs) {
+        	// TODO: get attribute in the correct manner
             BigInteger attr = (BigInteger) values.get(struct.getName()).getContent();
             commands.add(
                     new ProtocolCommand(
@@ -808,36 +792,21 @@ public class IdemixSmartcard {
 
 
 
-    public static ProtocolCommands buildProofCommands(CardVersion cv, final BigInteger nonce, final ProofSpec spec, short id) {
-        ProtocolCommands commands = new ProtocolCommands();
-        // Set the system parameters
-        SystemParameters sysPars = spec.getGroupParams().getSystemParams();
+	public static ProtocolCommands buildProofCommands(CardVersion cv,
+			final BigInteger nonce, IdemixVerificationDescription vd) {
+		ProtocolCommands commands = new ProtocolCommands();
 
-        Predicate predicate = spec.getPredicates().firstElement();
-        if (predicate.getPredicateType() != PredicateType.CL) {
-            throw new RuntimeException("Unimplemented predicate.");
-        }
-        CLPredicate pred = ((CLPredicate) predicate);
-        CredentialStructure cred = (CredentialStructure)
-                StructureStore.getInstance().get(pred.getCredStructLocation());
-
-        // Determine the disclosure selection bitmask
-        short D = 0;
-        for (AttributeStructure attribute : cred.getAttributeStructs()) {
-            Identifier identifier = pred.getIdentifier(attribute.getName());
-            if (identifier.isRevealed()) {
-                D |= 1 << attribute.getKeyIndex();
-            }
-        }
+        IdemixPublicKey pk = vd.getIssuerPublicKey();
+        IdemixSystemParameters sysPars = pk.getSystemParameters();
 
         commands.add(
-                startProofCommand(cv, spec, id, D));
+                startProofCommand(cv, vd));
         commands.add(
                 new ProtocolCommand(
                         "challenge_c",
                         "Send challenge n1",
                         new CommandAPDU(CLA_IRMACARD, INS_PROVE_COMMITMENT, 0x00, 0x00,
-                                fixLength(nonce, sysPars.getL_Phi()))));
+                                fixLength(nonce, sysPars.l_statzk))));
         commands.add(
                 new ProtocolCommand(
                         "signature_A",
@@ -859,58 +828,50 @@ public class IdemixSmartcard {
                         "Get random value (@index 0).",
                         new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, 0x00, 0x00)));
 
+        // Handle fixed attributes
+        commands.add(
+                new ProtocolCommand(
+                        "attr_master",
+                        "Get random value (@index 0).",
+                        new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, 0, 0x00)));
+
         // iterate over all the identifiers
-        for (AttributeStructure attribute : cred.getAttributeStructs()) {
-            String attName = attribute.getName();
-            Identifier identifier = pred.getIdentifier(attName);
-            int i = attribute.getKeyIndex();
-            commands.add(
-                    new ProtocolCommand(
-                            "attr_"+attName,
-                            (identifier.isRevealed() ? "Get disclosed attribute" : "Get random value") + " (@index " + i + ").",
-                            new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, i, 0x00)));
-        }
+        List<Integer> disclosed = vd.getDisclosedAttributeIdxs();
+        for(int i = 0; i < vd.numberOfAttributes(); i++) {
+			String attrName = vd.getAttributeName(i);
+			boolean is_disclosed = disclosed.contains(i);
+			commands.add(new ProtocolCommand(
+						"attr_" + attrName,
+						(is_disclosed ? "Get disclosed attribute"
+							: "Get random value") + " (@index " + i + ").",
+						new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, i, 0x00)));
+		}
         return commands;
     }
 
-    public static Proof processBuildProofResponses(CardVersion cv, ProtocolResponses responses, final ProofSpec spec) {
-        HashMap<String, SValue> sValues = new HashMap<String, SValue>();
-        TreeMap<String, BigInteger> commonList = new TreeMap<String, BigInteger>();
+	public static IRMAIdemixDisclosureProof processBuildProofResponses(CardVersion cv,
+			ProtocolResponses responses, final IdemixVerificationDescription vd) {
+		BigInteger c = new BigInteger(1, responses.get("challenge_c").getData());
+		BigInteger A = new BigInteger(1, responses.get("signature_A").getData());
+		BigInteger e_response =
+				new BigInteger(1, responses.get("signature_e").getData());
+		BigInteger v_response =
+				new BigInteger(1, responses.get("signature_v").getData());
 
-        Predicate predicate = spec.getPredicates().firstElement();
-        if (predicate.getPredicateType() != PredicateType.CL) {
-            throw new RuntimeException("Unimplemented predicate.");
-        }
-        CLPredicate pred = ((CLPredicate) predicate);
-        StructureStore store = StructureStore.getInstance();
-        CredentialStructure cred = (CredentialStructure) store.get(
-               pred.getCredStructLocation());
+		HashMap<Integer, BigInteger> a_responses = new HashMap<Integer, BigInteger>();
+		HashMap<Integer, BigInteger> a_disclosed = new HashMap<Integer, BigInteger>();
 
-
-        BigInteger challenge = new BigInteger(1, responses.get("challenge_c").getData());
-
-        commonList.put(pred.getTempCredName(),
-                        new BigInteger(1, responses.get("signature_A").getData()));
-
-        sValues.put(pred.getTempCredName(),
-                new SValue(
-                        new SValuesProveCL(
-                                new BigInteger(1, responses.get("signature_e").getData()),
-                                new BigInteger(1, responses.get("signature_v").getData())
-                                )));
-
-        sValues.put(IssuanceSpec.MASTER_SECRET_NAME,
-                new SValue(new BigInteger(1, responses.get("master").getData())));
-
-        for (AttributeStructure attribute : cred.getAttributeStructs()) {
-            String attName = attribute.getName();
-            Identifier identifier = pred.getIdentifier(attName);
-            sValues.put(identifier.getName(),
-                    new SValue(new BigInteger(1, responses.get("attr_" + attName).getData())));
+        for(int i = 0; i < vd.numberOfAttributes(); i++ ) {
+			String name = "attr_" + vd.getAttributeName(i);
+			if (vd.isDisclosed(i)) {
+				a_disclosed.put(i, new BigInteger(1, responses.get(name).getData()));
+			} else {
+				a_responses.put(i, new BigInteger(1, responses.get(name).getData()));
+			}
         }
 
         // Return the generated proof, based on the proof specification
-        return new Proof(challenge, sValues, commonList);
+        return new IRMAIdemixDisclosureProof(c, A, e_response, v_response, a_responses, a_disclosed);
     }
 
     public static ProtocolCommand getCredentialsCommand(CardVersion cv) {

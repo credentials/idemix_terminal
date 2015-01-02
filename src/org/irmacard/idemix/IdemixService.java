@@ -29,10 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
-import org.irmacard.idemix.util.CardVersion;
-import org.irmacard.idemix.util.IdemixFlags;
-import org.irmacard.idemix.util.IdemixLogEntry;
-
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
@@ -43,15 +39,15 @@ import net.sourceforge.scuba.smartcards.ProtocolResponses;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.util.Hex;
 
-import com.ibm.zurich.idmx.api.ProverInterface;
-import com.ibm.zurich.idmx.api.RecipientInterface;
+import org.irmacard.idemix.util.CardVersion;
+import org.irmacard.idemix.util.IdemixFlags;
+import org.irmacard.idemix.util.IdemixLogEntry;
+
 import com.ibm.zurich.idmx.dm.Credential;
 import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
 import com.ibm.zurich.idmx.issuance.IssuanceSpec;
 import com.ibm.zurich.idmx.issuance.Message;
-import com.ibm.zurich.idmx.showproof.Proof;
-import com.ibm.zurich.idmx.showproof.ProofSpec;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
@@ -60,8 +56,7 @@ import com.ibm.zurich.idmx.showproof.ProofSpec;
  * @version $Revision: 554 $ by $Author: pim $
  *          $LastChangedDate: 2011-04-28 16:31:47 +0200 (Thu, 28 Apr 2011) $
  */
-public class IdemixService extends CardService
-implements ProverInterface, RecipientInterface {
+public class IdemixService extends CardService {
 
     /**
      * Universal version identifier to match versions during deserialisation.
@@ -127,29 +122,7 @@ implements ProverInterface, RecipientInterface {
         if (!isOpen()) {
             service.open();
         }
-        byte[] response = selectApplication();
-
-        // 0.6.1 or older had no versioning
-        if (response == null || response.length == 0) {
-            cardVersion = new CardVersion(0, 6, 1, "or older");
-
-        // 0.6.2 - 0.7.2
-        } else if (response.length == 4) {
-            cardVersion = new CardVersion(response[1], response[2], (int) response[3]);
-
-        // 0.8 and newer
-        } else {
-            int i = 0;
-            if (response[i++] == 0x6F) {
-                int length = response[i++];
-                byte[] data = new byte[length];
-                System.arraycopy(response, i, data, 0, length);
-                cardVersion = new CardVersion(data);
-            } else {
-                System.err.println("Unknown response value");
-            }
-        }
-
+        cardVersion = selectApplication();
         System.out.println("Found card application: " + cardVersion.toString());
     }
 
@@ -269,7 +242,7 @@ implements ProverInterface, RecipientInterface {
      * @throws CardServiceException if an error occurred.
      * @throws IOException
      */
-    public byte[] selectApplication()
+    public CardVersion selectApplication()
     throws CardServiceException {
         ProtocolResponse response;
         try {
@@ -279,7 +252,7 @@ implements ProverInterface, RecipientInterface {
             System.err.println("Failed to select application, now looking for legacy version");
             response = execute(IdemixSmartcard.selectApplicationCommand_0_7);
         }
-        return response.getData();
+        return new CardVersion(response.getData());
     }
 
     /**
@@ -498,29 +471,6 @@ implements ProverInterface, RecipientInterface {
             // Do NOT return the generated Idemix credential
             return null;
 
-        // Report caught exceptions
-        } catch (CardServiceException e) {
-            System.err.println(e.getMessage() + "\n");
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * Builds an Identity mixer show-proof data structure, which can be passed
-     * to the verifier for verification.
-     *
-     * @return Identity mixer show-proof data structure.
-     */
-    public Proof buildProof(final BigInteger nonce, final ProofSpec spec) {
-        // Hide CardServiceExceptions, instead return null on failure
-        try {
-            ProtocolCommands commands;
-
-            commands = IdemixSmartcard.buildProofCommands(getCardVersion(),
-                   nonce, spec, credentialId);
-            ProtocolResponses responses = execute(commands);
-            return IdemixSmartcard.processBuildProofResponses(getCardVersion(), responses, spec);
         // Report caught exceptions
         } catch (CardServiceException e) {
             System.err.println(e.getMessage() + "\n");
