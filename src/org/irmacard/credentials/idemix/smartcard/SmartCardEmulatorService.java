@@ -40,6 +40,10 @@ public class SmartCardEmulatorService extends CardService {
 		card = new IRMACard();
 	}
 
+	public SmartCardEmulatorService(IRMACard card) {
+		this.card = card;
+	}
+
 	public SmartCardEmulatorService(Path path) {
 		this.cardStoragePath = path;
 
@@ -51,6 +55,10 @@ public class SmartCardEmulatorService extends CardService {
 			e.printStackTrace();
 			card = new IRMACard();
 		}
+	}
+
+	public IRMACard getCard() {
+		return card;
 	}
 
 	@Override
