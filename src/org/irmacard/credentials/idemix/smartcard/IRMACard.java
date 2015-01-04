@@ -331,7 +331,7 @@ public class IRMACard {
 
 
 		// Prepare temporary storage of credential
-		issuer_pk = new IdemixPublicKey(issuanceSetup.getSize() + 1);
+		issuer_pk = new IdemixPublicKey(issuanceSetup.getSize() + 2);
 
 		attributes = new Vector<BigInteger>(issuanceSetup.getSize());
 		for(int i = 0; i < issuanceSetup.getSize(); i++) {

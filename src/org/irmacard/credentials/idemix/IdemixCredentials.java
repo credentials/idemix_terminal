@@ -29,18 +29,19 @@ import java.util.Vector;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.ProtocolCommand;
 import net.sourceforge.scuba.smartcards.ProtocolCommands;
 import net.sourceforge.scuba.smartcards.ProtocolResponses;
 
 import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.BaseCredentials;
 import org.irmacard.credentials.CredentialsException;
-import org.irmacard.credentials.Nonce;
+import org.irmacard.credentials.idemix.descriptions.IdemixCredentialDescription;
 import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.credentials.idemix.irma.IRMAIdemixDisclosureProof;
+import org.irmacard.credentials.idemix.irma.IRMAIdemixIssuer;
+import org.irmacard.credentials.idemix.messages.IssueCommitmentMessage;
+import org.irmacard.credentials.idemix.messages.IssueSignatureMessage;
 import org.irmacard.credentials.idemix.spec.IdemixIssueSpecification;
-import org.irmacard.credentials.idemix.spec.IdemixVerifySpecification;
 import org.irmacard.credentials.idemix.util.CredentialInformation;
 import org.irmacard.credentials.info.AttributeDescription;
 import org.irmacard.credentials.info.CredentialDescription;
@@ -49,7 +50,6 @@ import org.irmacard.credentials.info.InfoException;
 import org.irmacard.credentials.info.VerificationDescription;
 import org.irmacard.credentials.keys.PrivateKey;
 import org.irmacard.credentials.spec.IssueSpecification;
-import org.irmacard.credentials.spec.VerifySpecification;
 import org.irmacard.credentials.util.log.IssueLogEntry;
 import org.irmacard.credentials.util.log.LogEntry;
 import org.irmacard.credentials.util.log.RemoveLogEntry;
@@ -58,9 +58,6 @@ import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.IdemixSmartcard;
 import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixLogEntry;
-
-import com.ibm.zurich.idmx.issuance.Issuer;
-import com.ibm.zurich.idmx.issuance.Message;
 
 /**
  * An Idemix specific implementation of the credentials interface.
@@ -102,46 +99,39 @@ public class IdemixCredentials extends BaseCredentials {
 	 * @throws CredentialsException
 	 *             if the issuance process fails.
 	 */
-	@Override
-	public void issue(IssueSpecification specification, PrivateKey sk,
-			Attributes values, Date expiry) throws CredentialsException {
-		IdemixIssueSpecification spec = castIssueSpecification(specification);
-		spec.setCardVersion(service.getCardVersion());
-		IdemixPrivateKey isk = castIdemixPrivateKey(sk);
+	public void issue(CredentialDescription cd, IdemixSecretKey sk,
+			Attributes attributes, Date expiry) throws CredentialsException {
+		attributes.setExpireDate(expiry);
+		// TODO: is this credential ID even referenced somewhere?
+		attributes.setCredentialID(cd.getId());
+		CardVersion cv = service.getCardVersion();
 
-		values.setExpireDate(expiry);
-		values.setCredentialID(spec.getIdemixId());
-
-//		BigInteger context = Utils.computeRandomNumber(spec.getIssuanceSpec().getPublicKey().getGroupParams().getSystemParams().getL_H());
-//		spec.setContext(context);
+		IdemixCredentialDescription icd = null;
+		BigInteger nonce1 = null;
+		try {
+			icd = new IdemixCredentialDescription(cd);
+			nonce1 = icd.generateNonce();
+		} catch (InfoException e) {
+			throw new CredentialsException(e);
+		}
 
 		// Initialize the issuer
-		Issuer issuer = new Issuer(isk.getIssuerKeyPair(), spec.getIssuanceSpec(),
-				null, null, spec.getValues(values));
+		IRMAIdemixIssuer issuer = new IRMAIdemixIssuer(icd.getPublicKey(), sk, icd.getContext());
 
-//		BigInteger nonce = Utils.computeRandomNumber(spec.getIssuanceSpec().getPublicKey().getGroupParams().getSystemParams().getL_Phi());
-//		issuer.setNonce(nonce);
-
-		ProtocolResponses responses;
 		try {
-			responses = service.execute(requestIssueRound1Commands(
-					spec, values, issuer));
-			responses = service.execute(requestIssueRound3Commands(
-					spec, values, issuer, responses));
+			IssueCommitmentMessage commit_msg =
+						IdemixSmartcard.processIssueCommitmentCommands(cv,
+						service.execute(
+						IdemixSmartcard.requestIssueCommitmentCommands(cv,
+								icd, attributes, nonce1)));
+			IssueSignatureMessage signature_msg =
+					issuer.issueSignature(commit_msg, icd, attributes, nonce1);
+			service.execute(
+					IdemixSmartcard.requestIssueSignatureCommands(cv, icd, signature_msg));
 			// FIXME: Check responses to round 3
 		} catch (CardServiceException e) {
 			throw new CredentialsException("Issuing caused exception", e);
 		}
-	}
-
-	/**
-	 * Get a blank IssueSpecification matching this Credentials provider.
-	 * TODO: Proper implementation or remove it.
-	 *
-	 * @return a blank specification matching this provider.
-	 */
-	public IssueSpecification issueSpecification() {
-		return null;
 	}
 
 	public void verifyPrepare()
@@ -157,6 +147,9 @@ public class IdemixCredentials extends BaseCredentials {
 	/**
 	 * Verify a number of attributes listed in the specification.
 	 *
+	 * TODO: maybe interface is better when just passing VerificationDescription?
+	 * TODO: see also corresponding IdemixSmartcard methods
+	 *
 	 * @param desc The VerificationDescription of the credential to be verified
 	 * @return the attributes disclosed during the verification process or null
 	 *         if verification failed
@@ -167,7 +160,13 @@ public class IdemixCredentials extends BaseCredentials {
 		verifyPrepare();
 
 		CardVersion cv = service.getCardVersion();
-		BigInteger nonce = desc.generateNonce();
+		// TODO: maybe not wrap it but handle exceptions better?
+		BigInteger nonce = null;
+		try {
+			nonce = desc.generateNonce();
+		} catch (InfoException e) {
+			throw new CredentialsException(e);
+		}
 
 		// Run the protocol
 		try {
@@ -176,17 +175,6 @@ public class IdemixCredentials extends BaseCredentials {
 		} catch (CardServiceException e) {
 			throw new CredentialsException("Verification encountered error", e);
 		}
-	}
-
-	/**
-	 * Get a blank VerifySpecification matching this Credentials provider. TODO:
-	 * proper implementation or remove it
-	 *
-	 * @return a blank specification matching this provider.
-	 */
-	@Override
-	public VerifySpecification verifySpecification() {
-		return null;
 	}
 
 	public ProtocolCommands requestProofCommands(
@@ -212,51 +200,15 @@ public class IdemixCredentials extends BaseCredentials {
 	 *    in fact the nonce, so we could handle that a bit cleaner. Carrying around
 	 *    the issuer object may not be the best solution
 	 *  - We need to deal with the selectApplet and sendPinCommands better.
-	 * @throws CredentialsException
-	 */
-	public ProtocolCommands requestIssueRound1Commands(
-			IssueSpecification ispec, Attributes attributes, Issuer issuer)
-			throws CredentialsException {
-		ProtocolCommands commands = new ProtocolCommands();
-		IdemixIssueSpecification spec = castIssueSpecification(ispec);
-
-		commands.addAll(IdemixSmartcard.setIssuanceSpecificationCommands(spec.getCardVersion(),
-				spec.getIssuanceSpec(), spec.getIdemixId()));
-
-		commands.addAll(IdemixSmartcard.setAttributesCommands(spec.getCardVersion(),
-				spec.getIssuanceSpec(), spec.getValues(attributes)));
-
-		// Issue the credential
-		Message msgToRecipient1 = issuer.round0();
-		if (msgToRecipient1 == null) {
-			throw new CredentialsException("Failed to issue the credential (0)");
-		}
-
-		commands.addAll(IdemixSmartcard.round1Commands(spec.getCardVersion(), spec.getIssuanceSpec(),
-				msgToRecipient1));
-
-		return commands;
-	}
-
-	/**
-	 * Second part of issuing. Just like the first part still in flux. Note how
-	 * we can immediately process the responses as well as create new commands.
 	 *
+	 *  TODO: seems this doesn't quite belong here
 	 * @throws CredentialsException
 	 */
-	public ProtocolCommands requestIssueRound3Commands(IssueSpecification ispec, Attributes attributes, Issuer issuer, ProtocolResponses responses)
-	throws CredentialsException {
-		return requestIssueRound3Commands(ispec, attributes, issuer, responses, null);
-	}
-	public ProtocolCommands requestIssueRound3Commands(IssueSpecification ispec, Attributes attributes, Issuer issuer, ProtocolResponses responses, BigInteger nonce)
-	throws CredentialsException {
-		IdemixIssueSpecification spec = castIssueSpecification(ispec);
-		Message msgToIssuer = IdemixSmartcard.processRound1Responses(spec.getCardVersion(), responses);
-		Message msgToRecipient2 = ((nonce == null) ? issuer.round2(msgToIssuer) : issuer.round2(nonce, msgToIssuer));
-		if (msgToRecipient2 == null) {
-			throw new CredentialsException("IdemixLibrary failed to generate the message for the recipient, probably because the proof-of-correctness for the card commitment could not be verified.");
-		}
-		return IdemixSmartcard.round3Commands(spec.getCardVersion(), spec.getIssuanceSpec(), msgToRecipient2);
+	public ProtocolCommands requestIssueCommitmentCommands(
+			IdemixCredentialDescription cd, Attributes attributes, BigInteger nonce1)
+			throws CredentialsException {
+		CardVersion cv = service.getCardVersion();
+		return IdemixSmartcard.requestIssueCommitmentCommands(cv, cd, attributes, nonce1);
 	}
 
 	public BigInteger generateNonce(VerificationDescription cd) {
@@ -321,15 +273,6 @@ public class IdemixCredentials extends BaseCredentials {
 		return credentialList;
 	}
 
-	private static IdemixVerifySpecification castVerifySpecification(
-			VerifySpecification spec) throws CredentialsException {
-		if (!(spec instanceof IdemixVerifySpecification)) {
-			throw new CredentialsException(
-					"specification is not an IdemixVerifySpecification");
-		}
-		return (IdemixVerifySpecification) spec;
-	}
-
 	private static IdemixIssueSpecification castIssueSpecification(
 			IssueSpecification spec) throws CredentialsException {
 		if (!(spec instanceof IdemixIssueSpecification)) {
@@ -337,14 +280,6 @@ public class IdemixCredentials extends BaseCredentials {
 					"specification is not an IdemixIssueSpecification");
 		}
 		return (IdemixIssueSpecification) spec;
-	}
-
-	private static IdemixNonce castNonce(Nonce nonce)
-			throws CredentialsException {
-		if (!(nonce instanceof IdemixNonce)) {
-			throw new CredentialsException("nonce is not an IdemixNonce");
-		}
-		return (IdemixNonce) nonce;
 	}
 
 	private IdemixPrivateKey castIdemixPrivateKey(PrivateKey sk)
@@ -403,7 +338,7 @@ public class IdemixCredentials extends BaseCredentials {
 		HashMap<String, Boolean> attributeDisclosed = new HashMap<String, Boolean>();
 		List<AttributeDescription> attributes = cred.getAttributes();
 
-		// Start at 2 so we skip the master secret and expiry
+		// Start at 2 so we skip the master secret and metadata
 		for (int i = 2; i < attributes.size() + 2; i++) {
 			attributeDisclosed.put(attributes.get(i-2).getName(), new Boolean(
 					(disclose & (1 << i)) != 0));
@@ -414,28 +349,5 @@ public class IdemixCredentials extends BaseCredentials {
 
 	public CardVersion getCardVersion() {
 		return service.getCardVersion();
-	}
-
-	@Override
-	public Nonce generateNonce(VerifySpecification specification)
-			throws CredentialsException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<ProtocolCommand> requestProofCommands(
-			VerifySpecification specification, Nonce nonce)
-			throws CredentialsException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Attributes verifyProofResponses(VerifySpecification specification,
-			Nonce nonce, ProtocolResponses responses)
-			throws CredentialsException {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }

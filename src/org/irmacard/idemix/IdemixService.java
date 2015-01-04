@@ -43,11 +43,8 @@ import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
 
-import com.ibm.zurich.idmx.dm.Credential;
-import com.ibm.zurich.idmx.dm.Values;
 import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
 import com.ibm.zurich.idmx.issuance.IssuanceSpec;
-import com.ibm.zurich.idmx.issuance.Message;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
@@ -429,87 +426,6 @@ public class IdemixService extends CardService {
     public void generateMasterSecret()
     throws CardServiceException {
         execute(IdemixSmartcard.generateMasterSecretCommand(getCardVersion()));
-    }
-
-    /**
-     * @param theNonce1
-     *            Nonce provided by the verifier.
-     * @return Message containing the proof about the hidden and committed
-     *         attributes sent to the Issuer.
-     */
-    public Message round1(final Message msg) {
-        // Hide CardServiceExceptions, instead return null on failure
-        try {
-            ProtocolCommands commands = IdemixSmartcard.round1Commands(getCardVersion(), issuanceSpec, msg);
-            ProtocolResponses responses = execute(commands);
-            return IdemixSmartcard.processRound1Responses(getCardVersion(), responses);
-
-        // Report caught exceptions
-        } catch (CardServiceException e) {
-            System.err.println(e.getMessage() + "\n");
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
-    /**
-     * Called with the second protocol flow as input, outputs the Credential.
-     * This is the last step of the issuance protocol, where the Recipient
-     * verifies that the signature is valid and outputs it.
-     *
-     * @param msg
-     *            the second flow of the protocol, a message from the Issuer
-     * @return null
-     */
-    public Credential round3(final Message msg) {
-        // Hide CardServiceExceptions, instead return null on failure
-        try {
-            // send Signature
-            execute(IdemixSmartcard.round3Commands(getCardVersion(), issuanceSpec, msg));
-
-            // Do NOT return the generated Idemix credential
-            return null;
-
-        // Report caught exceptions
-        } catch (CardServiceException e) {
-            System.err.println(e.getMessage() + "\n");
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * Set the specification of a certificate issuance:
-     *
-     * <ul>
-     *   <li> issuer public key, and
-     *   <li> context.
-     * </ul>
-     *
-     * @param spec the specification to be set.
-     * @throws CardServiceException if an error occurred.
-     */
-    public void setIssuanceSpecification(IssuanceSpec spec) throws CardServiceException {
-        issuanceSpec = spec;
-
-        execute(IdemixSmartcard.setIssuanceSpecificationCommands(getCardVersion(), spec, credentialId));
-    }
-
-    /**
-     * Set the attributes:
-     *
-     * <pre>
-     *   m_1, ..., m_l
-     * </pre>
-     *
-     * @param spec the issuance specification for the ordering of the values.
-     * @param values the attributes to be set.
-     * @throws CardServiceException if an error occurred.
-     */
-    public void setAttributes(IssuanceSpec spec, Values values)
-    throws CardServiceException {
-        execute(IdemixSmartcard.setAttributesCommands(getCardVersion(), spec, values));
     }
 
     public Vector<Integer> getCredentials()

@@ -75,6 +75,23 @@ public class IssuanceSetupData {
 				.putInt(timestamp).array();
 	}
 
+	public byte[] getBytesLegacy() {
+		ByteBuffer buffer = ByteBuffer.allocate(SIZE_CRED_ID + SIZE_CONTEXT + SIZE_SIZE + SIZE_TIMESTAMP);
+
+		return buffer.putShort(id)
+				.put(IdemixSmartcard.fixLength(context, SIZE_CONTEXT * 8))
+				.putShort(size)
+				.putInt(timestamp).array();
+	}
+
+	public byte[] getBytes(CardVersion cv) {
+		if (cv.newer(new CardVersion(0, 7, 2))) {
+        	return getBytes();
+		} else {
+			return getBytesLegacy();
+		}
+	}
+
 	public short getID() {
 		return id;
 	}

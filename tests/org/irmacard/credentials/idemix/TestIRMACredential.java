@@ -41,9 +41,7 @@ import org.irmacard.credentials.idemix.categories.RemovalTest;
 import org.irmacard.credentials.idemix.categories.VerificationTest;
 import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.credentials.idemix.info.IdemixKeyStore;
-import org.irmacard.credentials.idemix.spec.IdemixIssueSpecification;
 import org.irmacard.credentials.idemix.util.CredentialInformation;
-import org.irmacard.credentials.idemix.util.IssueCredentialInformation;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
@@ -428,21 +426,17 @@ public class TestIRMACredential {
 	private void issue(String issuer, String credential, Attributes attributes)
 			throws InfoException, CardException, CredentialsException,
 			CardServiceException {
-		IssueCredentialInformation ici = new IssueCredentialInformation(issuer,
-				credential);
-		issue(ici, attributes);
+		CredentialDescription cd = DescriptionStore.getInstance().getCredentialDescriptionByName(issuer, credential);
+		issue(cd, attributes);
 	}
 
-	private void issue(IssueCredentialInformation ici, Attributes attributes)
-			throws CardException, CredentialsException, CardServiceException {
-		IdemixIssueSpecification spec = ici.getIdemixIssueSpecification();
-		IdemixPrivateKey isk = ici.getIdemixPrivateKey();
-
+	private void issue(CredentialDescription cd, Attributes attributes)
+			throws InfoException, CardException, CredentialsException, CardServiceException {
 		IdemixService is = new IdemixService(TestSetup.getCardService());
 		IdemixCredentials ic = new IdemixCredentials(is);
 		ic.connect();
 		is.sendPin(TestSetup.DEFAULT_CRED_PIN);
-		ic.issue(spec, isk, attributes, null);
+		ic.issue(cd, IdemixKeyStore.getInstance().getSecretKey(cd), attributes, null);
 		is.close();
 	}
 
