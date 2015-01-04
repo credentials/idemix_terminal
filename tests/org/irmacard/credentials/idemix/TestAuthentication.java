@@ -1,26 +1,25 @@
 /**
  * TestSecureMessaging.java
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) Wouter Lueks, Radboud University Nijmegen, September 2012.
  * Copyright (C) Pim Vullers, Radboud University Nijmegen, September 2012.
  */
 
 package org.irmacard.credentials.idemix;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -55,7 +54,6 @@ import org.ejbca.cvc.exception.ConstructionException;
 import org.ejbca.cvc.util.BCECUtil;
 import org.irmacard.credentials.cert.IRMACertificate;
 import org.irmacard.credentials.cert.IRMACertificateBody;
-import org.irmacard.credentials.idemix.util.CredentialInformation;
 import org.irmacard.idemix.IdemixService;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -65,17 +63,15 @@ public class TestAuthentication {
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
-    
+
     private RSAPublicKey caKey;
-    
+
 	@BeforeClass
 	public static void initializeInformation() {
-		CredentialInformation.setCoreLocation(new File(System
-				.getProperty("user.dir")).toURI()
-				.resolve("irma_configuration/"));
+		// TODO: initialize storage
 		java.security.Security.addProvider(new com.sun.crypto.provider.SunJCE());
 	}
-	
+
 	@Test
 	public void testCertificateVerification() throws CardException, CardServiceException, NoSuchAlgorithmException, NoSuchProviderException, ConstructionException, InvalidKeyException, SignatureException, IOException, CertificateException {
 		Certificate cert = constructCertificate();
@@ -87,7 +83,7 @@ public class TestAuthentication {
 		//idemix.setCAKey(caKey);
 		//idemix.verifyCertificate(cert);
 	}
-	
+
 	private Certificate constructCertificate() throws NoSuchAlgorithmException, NoSuchProviderException, ConstructionException, InvalidKeyException, SignatureException, IOException {
         final KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
         keyGen.initialize(1024, new SecureRandom());
@@ -103,28 +99,28 @@ public class TestAuthentication {
         final HolderReferenceField holderRef = new HolderReferenceField(caRef.getCountry(), caRef.getMnemonic(), caRef.getSequence());
         Calendar cal1 = Calendar.getInstance();
         Date validFrom = cal1.getTime();
-        
+
         Calendar cal2 = Calendar.getInstance();
         cal2.add(Calendar.MONTH, 3);
         Date validTo = cal2.getTime();
 
         // Create the CVCertificateBody
         IRMACertificateBody body = new IRMACertificateBody(
-              caRef, 
+              caRef,
               cvcPublicKey,
               holderRef,
               validFrom,
               validTo );
 
         IRMACertificate cvc = new IRMACertificate(body);
-        
+
         // Perform signing
         Signature signature = Signature.getInstance(AlgorithmUtil.convertAlgorithmNameToCVC(algorithmName), "BC");
         signature.initSign(signerKey);
         System.out.println("TBS (" + cvc.getTBS().length + "): " + Hex.toHexString(cvc.getTBS()));
-        signature.update(cvc.getTBS());        
+        signature.update(cvc.getTBS());
         byte[] signdata = signature.sign();
-        
+
         // Now convert the X9.62 signature to a CVC signature
         byte[] sig = BCECUtil.convertX962SigToCVC(algorithmName, signdata);
         // Save the signature and return the certificate

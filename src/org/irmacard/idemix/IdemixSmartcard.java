@@ -51,9 +51,6 @@ import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IssuanceSetupData;
 import org.irmacard.idemix.util.VerificationSetupData;
 
-import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
-import com.ibm.zurich.idmx.issuance.IssuanceSpec;
-
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
  *
@@ -882,18 +879,27 @@ public class IdemixSmartcard {
         }
     }
 
-    public static ProtocolCommands getAttributesCommands(CardVersion cv, IssuanceSpec spec) {
+    public static ProtocolCommands requestGetAttributesCommands(CardVersion cv, IdemixCredentialDescription cd) {
         ProtocolCommands commands = new ProtocolCommands();
-        for (AttributeStructure attribute : spec.getCredentialStructure()
-                .getAttributeStructs()) {
-            String attName = attribute.getName();
-            int i = attribute.getKeyIndex();
+        commands.add(selectCredentialCommand(cv, cd.getCredentialDescription().getId()));
+        for (int i = 1; i <= cd.numberOfAttributes(); i++) {
+            String attrName = cd.getAttributeName(i);
             commands.add(new ProtocolCommand(
-                "attr_" + attName,
+                "attr_" + attrName,
                 "Get attribute (@index " + i + ")",
                 new CommandAPDU(CLA_IRMACARD, INS_ADMIN_ATTRIBUTE, i, 0x00)));
         }
         return commands;
+    }
+
+    public static Attributes processGetAttributesCommands(CardVersion cv, IdemixCredentialDescription cd, ProtocolResponses responses) {
+		Attributes attributes = new Attributes();
+		for(int i = 1; i <= cd.numberOfAttributes(); i++) {
+			String attrName = cd.getAttributeName(i);
+			attributes.add(attrName,
+					responses.get("attr_" + attrName).getData());
+		}
+		return attributes;
     }
 
     public static ProtocolCommand removeCredentialCommand(CardVersion cv, short id) {

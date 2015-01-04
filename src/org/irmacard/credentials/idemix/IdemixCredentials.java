@@ -41,15 +41,11 @@ import org.irmacard.credentials.idemix.irma.IRMAIdemixDisclosureProof;
 import org.irmacard.credentials.idemix.irma.IRMAIdemixIssuer;
 import org.irmacard.credentials.idemix.messages.IssueCommitmentMessage;
 import org.irmacard.credentials.idemix.messages.IssueSignatureMessage;
-import org.irmacard.credentials.idemix.spec.IdemixIssueSpecification;
-import org.irmacard.credentials.idemix.util.CredentialInformation;
 import org.irmacard.credentials.info.AttributeDescription;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
 import org.irmacard.credentials.info.VerificationDescription;
-import org.irmacard.credentials.keys.PrivateKey;
-import org.irmacard.credentials.spec.IssueSpecification;
 import org.irmacard.credentials.util.log.IssueLogEntry;
 import org.irmacard.credentials.util.log.LogEntry;
 import org.irmacard.credentials.util.log.RemoveLogEntry;
@@ -225,22 +221,21 @@ public class IdemixCredentials extends BaseCredentials {
 	 * @param credential identifier.
 	 * @return attributes for the given credential.
 	 * @throws CardServiceException
+	 * @throws CredentialsException
 	 */
-	public Attributes getAttributes(CredentialDescription cd) throws CardServiceException {
-		// FIXME: for now retrieve this here, but this does mean that these files get
-		// loaded over and over again.
-		CredentialInformation ci = new CredentialInformation(cd);
-
-		service.selectCredential(ci.getIdemixIssueSpecification().getIdemixId());
-		HashMap<String, BigInteger> attr_map = service.getAttributes(ci
-				.getIdemixIssueSpecification().getIssuanceSpec());
-
-		// FIXME: it is highly doubtful that this should happen here
-		Attributes attr = new Attributes();
-		for(String k : attr_map.keySet()) {
-			attr.add(k, attr_map.get(k).toByteArray());
+	public Attributes getAttributes(CredentialDescription cd)
+			throws CardServiceException, CredentialsException {
+		IdemixCredentialDescription icd = null;
+		try {
+			icd = new IdemixCredentialDescription(cd);
+		} catch (InfoException e) {
+			throw new CredentialsException(e);
 		}
-		return attr;
+
+		ProtocolResponses responses = service.execute(IdemixSmartcard
+				.requestGetAttributesCommands(getCardVersion(), icd));
+		return IdemixSmartcard.processGetAttributesCommands(getCardVersion(),
+				icd, responses);
 	}
 
 	public void removeCredential(CredentialDescription cd) throws CardServiceException {
@@ -271,24 +266,6 @@ public class IdemixCredentials extends BaseCredentials {
 		}
 
 		return credentialList;
-	}
-
-	private static IdemixIssueSpecification castIssueSpecification(
-			IssueSpecification spec) throws CredentialsException {
-		if (!(spec instanceof IdemixIssueSpecification)) {
-			throw new CredentialsException(
-					"specification is not an IdemixIssueSpecification");
-		}
-		return (IdemixIssueSpecification) spec;
-	}
-
-	private IdemixPrivateKey castIdemixPrivateKey(PrivateKey sk)
-			throws CredentialsException {
-		if (!(sk instanceof IdemixPrivateKey)) {
-			throw new CredentialsException(
-					"PrivateKey is not an IdemixPrivateKey");
-		}
-		return (IdemixPrivateKey) sk;
 	}
 
 	@Override

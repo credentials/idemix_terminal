@@ -32,13 +32,6 @@ import net.sourceforge.scuba.smartcards.CardService;
 import org.irmacard.credentials.idemix.smartcard.SmartCardEmulatorService;
 import org.irmacard.idemix.IdemixService;
 
-import com.ibm.zurich.credsystem.utils.Locations;
-import com.ibm.zurich.idmx.issuance.IssuanceSpec;
-import com.ibm.zurich.idmx.key.IssuerKeyPair;
-import com.ibm.zurich.idmx.key.IssuerPrivateKey;
-import com.ibm.zurich.idmx.showproof.ProofSpec;
-import com.ibm.zurich.idmx.utils.StructureStore;
-
 public class TestSetup {
     /** Actual location of the files. */
 	/** TODO: keep this in mind, do we need BASE_LOCATION to point to .../parameter/
@@ -93,41 +86,6 @@ public class TestSetup {
     public static final byte[] DEFAULT_CRED_PIN = "0000".getBytes();
     public static final byte[] DEFAULT_CARD_PIN = "000000".getBytes();
 
-    /** This one also sets up the system, but now it doesn't know the private key */
-    public static void setupSystem() {
-        Locations.initSystem(BASE_LOCATION, BASE_ID.toString());
-
-        // loading issuer public key
-        Locations.init(ISSUER_ID.resolve("ipk.xml"), ISSUER_LOCATION.resolve("ipk.xml"));
-    }
-
-    /** Setup the issuer's private key */
-    public static IssuerPrivateKey setupIssuerPrivateKey() {
-    	IssuerKeyPair ikp = (IssuerKeyPair) Locations.init(ISSUER_SK_LOCATION);
-    	return ikp.getPrivateKey();
-    }
-
-    /**
-	 * Setup the system including private key
-	 *
-	 * For use with the credentials-api it is not advisable to use initIssuer.
-	 * Using the seperate functions for setting up the material gives a bit more
-	 * control.
-	 */
-    public static IssuerKeyPair setupIssuer() {
-    	return Locations.initIssuer(BASE_LOCATION, BASE_ID.toString(),
-    			ISSUER_SK_LOCATION, ISSUER_PK_LOCATION, ISSUER_ID.resolve("ipk.xml"));
-    }
-
-    public static void setupCredentialStructure() {
-    	Locations.init(CRED_STRUCT_ID, CRED_STRUCT_LOCATION);
-    }
-
-    public static IssuanceSpec setupIssuanceSpec() {
-        // create the issuance specification
-        return new IssuanceSpec(ISSUER_ID.resolve("ipk.xml"), CRED_STRUCT_ID);
-    }
-
     static CardService cs = null;
     public static CardService getCardService() throws CardException {
     	if (cs == null) {
@@ -148,10 +106,5 @@ public class TestSetup {
 
     public static IdemixService getIdemixService() throws CardException {
     	return new IdemixService(getCardService());
-    }
-
-    // load the proof specification
-    public static ProofSpec setupProofSpec() {
-    	return (ProofSpec) StructureStore.getInstance().get(PROOF_SPEC_LOCATION);
     }
 }

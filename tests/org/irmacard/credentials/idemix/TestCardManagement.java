@@ -10,7 +10,7 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 
 import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.CredentialsException;
-import org.irmacard.credentials.idemix.util.CredentialInformation;
+import org.irmacard.credentials.idemix.info.IdemixKeyStore;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
@@ -24,25 +24,25 @@ public class TestCardManagement {
 	public static void initializeInformation() {
 		URI core = new File(System.getProperty("user.dir")).toURI().resolve(
 				"irma_configuration/");
-		CredentialInformation.setCoreLocation(core);
 		DescriptionStore.setCoreLocation(core);
+		IdemixKeyStore.setCoreLocation(core);
 	}
-	
+
 	@Test
 	public void testGetCredentials() throws CredentialsException, CardServiceException, InfoException, CardException {
 		IdemixService is = new IdemixService(TestSetup.getCardService());
 		IdemixCredentials ic = new IdemixCredentials(is);
 		ic.connect();
 		is.sendCardPin(TestSetup.DEFAULT_CARD_PIN);
-		
+
 		List<CredentialDescription> credentials = ic.getCredentials();
-		
+
 		System.out.println("Found the following credentials on the card:");
 		for(CredentialDescription ds : credentials) {
 			System.out.println(" * " + ds.toString());
 		}
 	}
-	
+
 	/**
 	 * For now we assume that at least one credential has been loaded on the card.
 	 * @throws CredentialsException
@@ -56,9 +56,9 @@ public class TestCardManagement {
 		IdemixCredentials ic = new IdemixCredentials(is);
 		ic.connect();
 		is.sendCardPin(TestSetup.DEFAULT_CARD_PIN);
-		
+
 		List<CredentialDescription> credentials = ic.getCredentials();
-		
+
 		System.out.println("Found the following credentials on the card:");
 		for(CredentialDescription ds : credentials) {
 			System.out.println(" * " + ds.toString());

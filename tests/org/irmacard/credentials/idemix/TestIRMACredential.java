@@ -41,7 +41,6 @@ import org.irmacard.credentials.idemix.categories.RemovalTest;
 import org.irmacard.credentials.idemix.categories.VerificationTest;
 import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.credentials.idemix.info.IdemixKeyStore;
-import org.irmacard.credentials.idemix.util.CredentialInformation;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
@@ -59,7 +58,6 @@ public class TestIRMACredential {
 		URI core = new File(System
 				.getProperty("user.dir")).toURI()
 				.resolve("irma_configuration/");
-		CredentialInformation.setCoreLocation(core);
 		DescriptionStore.setCoreLocation(core);
 		DescriptionStore.getInstance();
 		IdemixKeyStore.setCoreLocation(core);

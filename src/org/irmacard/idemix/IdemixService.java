@@ -20,12 +20,10 @@
 package org.irmacard.idemix;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -42,9 +40,6 @@ import net.sourceforge.scuba.util.Hex;
 import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
-
-import com.ibm.zurich.idmx.dm.structure.AttributeStructure;
-import com.ibm.zurich.idmx.issuance.IssuanceSpec;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
@@ -69,11 +64,6 @@ public class IdemixService extends CardService {
      * SCUBA service to communicate with the card.
      */
     protected CardService service;
-
-    /**
-     * Credential issuance specification.
-     */
-    protected IssuanceSpec issuanceSpec;
 
     /**
      * Credential identifier.
@@ -447,19 +437,6 @@ public class IdemixService extends CardService {
 
     public void selectCredential(short id) throws CardServiceException {
         execute(IdemixSmartcard.selectCredentialCommand(getCardVersion(), id));
-    }
-
-    public HashMap<String, BigInteger> getAttributes(IssuanceSpec spec)
-    throws CardServiceException {
-        HashMap<String, BigInteger> attributes = new HashMap<String, BigInteger>();
-        ProtocolCommands commands = IdemixSmartcard.getAttributesCommands(getCardVersion(), spec);
-        ProtocolResponses responses = execute(commands);
-        for (AttributeStructure attribute : spec.getCredentialStructure().getAttributeStructs()) {
-            String attName = attribute.getName();
-            attributes.put(attName,
-                    new BigInteger(1, responses.get("attr_" + attName).getData()));
-        }
-        return attributes;
     }
 
     public void removeCredential(short id)
