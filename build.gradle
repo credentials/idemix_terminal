@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven'
 
-version = '0.8'
+version = '0.8.1'
 group = 'org.irmacard.idemix'
 
 // Our directory structure differs from the default
@@ -15,11 +15,13 @@ repositories {
     maven {
         url "https://credentials.github.io/repos/maven2/"
     }
+    mavenCentral()
 }
 
 dependencies {
-    compile "com.ibm.zurich.idmx:idemix_library:2.3.4"
+    compile "org.irmacard.credentials:credentials_idemix:0.8.1"
     compile "net.sourceforge.scuba:scuba_smartcards:0.0.3"
+    compile 'com.google.code.gson:gson:2.2.2'
     testCompile "net.sourceforge.scuba:scuba_sc_j2se:0.0.3"
 }
 
