@@ -98,7 +98,6 @@ public class IdemixCredentials extends BaseCredentials {
 	public void issue(CredentialDescription cd, IdemixSecretKey sk,
 			Attributes attributes, Date expiry) throws CredentialsException {
 		attributes.setExpireDate(expiry);
-		// TODO: is this credential ID even referenced somewhere?
 		attributes.setCredentialID(cd.getId());
 		CardVersion cv = service.getCardVersion();
 

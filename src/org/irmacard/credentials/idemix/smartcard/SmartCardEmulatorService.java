@@ -19,42 +19,32 @@
 
 package org.irmacard.credentials.idemix.smartcard;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.LinkedList;
+import java.util.List;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
 
-import com.google.gson.Gson;
-
 public class SmartCardEmulatorService extends CardService {
 	private static final long serialVersionUID = 1L;
 	boolean open = false;
 	IRMACard card;
-	Path cardStoragePath;
+	List<CardChangedListener> listeners;
 
 	public SmartCardEmulatorService() {
 		card = new IRMACard();
+		listeners = new LinkedList<CardChangedListener>();
 	}
 
 	public SmartCardEmulatorService(IRMACard card) {
 		this.card = card;
+		listeners = new LinkedList<CardChangedListener>();
 	}
 
-	public SmartCardEmulatorService(Path path) {
-		this.cardStoragePath = path;
-
-		Gson gson = new Gson();
-		try {
-			byte[] data = Files.readAllBytes(cardStoragePath);
-			card = gson.fromJson(new String(data), IRMACard.class);
-		} catch (IOException e) {
-			e.printStackTrace();
-			card = new IRMACard();
-		}
+	public void addListener(CardChangedListener listener) {
+		listeners.add(listener);
 	}
 
 	public IRMACard getCard() {
@@ -63,8 +53,8 @@ public class SmartCardEmulatorService extends CardService {
 
 	@Override
 	public void close() {
-		if(cardStoragePath != null) {
-			card.storeState(cardStoragePath);
+		for(CardChangedListener listener : listeners) {
+			listener.cardChanged(card);
 		}
 		open = false;
 	}

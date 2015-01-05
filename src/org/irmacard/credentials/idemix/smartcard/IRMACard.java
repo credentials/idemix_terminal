@@ -19,14 +19,8 @@
 
 package org.irmacard.credentials.idemix.smartcard;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,9 +52,6 @@ import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
 import org.irmacard.idemix.util.IssuanceSetupData;
 import org.irmacard.idemix.util.VerificationSetupData;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class IRMACard {
 	protected final static byte CLA_SECURE_MESSAGING = (byte) 0x0C;
@@ -937,21 +928,7 @@ public class IRMACard {
 		return data(buffer.array());
 	}
 
-	public void storeState(Path cardStoragePath) {
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-		Writer writer = null;
-		try {
-		    writer = new BufferedWriter(new OutputStreamWriter(
-		          new FileOutputStream(cardStoragePath.toString()), "utf-8"));
-		    writer.write(gson.toJson(this));
-		} catch (IOException exception) {
-			Log.warning("Couldn't write state to " + cardStoragePath);
-			exception.printStackTrace();
-		} finally {
-		   try {writer.close();} catch (Exception ex) {}
-		}
-	}
 
 	//
 	// HELPER FUNCTIONS

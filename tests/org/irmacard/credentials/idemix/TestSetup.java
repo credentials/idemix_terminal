@@ -23,12 +23,16 @@ import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import javax.smartcardio.CardException;
 
 import net.sourceforge.scuba.smartcards.CardService;
 
+import org.irmacard.credentials.idemix.smartcard.CardChangedListener;
+import org.irmacard.credentials.idemix.smartcard.IRMACard;
+import org.irmacard.credentials.idemix.smartcard.IRMACardHelper;
 import org.irmacard.credentials.idemix.smartcard.SmartCardEmulatorService;
 import org.irmacard.idemix.IdemixService;
 
@@ -86,11 +90,21 @@ public class TestSetup {
     public static final byte[] DEFAULT_CRED_PIN = "0000".getBytes();
     public static final byte[] DEFAULT_CARD_PIN = "000000".getBytes();
 
+    public static final String PATH = "card.json";
+
     static CardService cs = null;
     public static CardService getCardService() throws CardException {
     	if (cs == null) {
-    		cs = new SmartCardEmulatorService(Paths.get(System
-    				.getProperty("user.dir"), "card.json"));
+    		final Path path = Paths.get(System.getProperty("user.dir"), PATH);
+    		IRMACard card = IRMACardHelper.loadState(path);
+    		SmartCardEmulatorService emu = new SmartCardEmulatorService(card);
+    		emu.addListener(new CardChangedListener() {
+    			@Override
+				public void cardChanged(IRMACard card) {
+					IRMACardHelper.storeState(card, path);
+				}
+			});
+    		cs = emu;
     	}
     	return cs;
 //    	return new InteractiveConsoleCardService();
