@@ -802,22 +802,11 @@ public class IdemixSmartcard {
                         "signature_v",
                         "Get random signature v^",
                             new CommandAPDU(CLA_IRMACARD, INS_PROVE_SIGNATURE, P1_SIGNATURE_V, 0x00)));
-        commands.add(
-                new ProtocolCommand(
-                        "master",
-                        "Get random value (@index 0).",
-                        new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, 0x00, 0x00)));
 
-        // Handle fixed attributes
-        commands.add(
-                new ProtocolCommand(
-                        "attr_master",
-                        "Get random value (@index 0).",
-                        new CommandAPDU(CLA_IRMACARD, INS_PROVE_ATTRIBUTE, 0, 0x00)));
-
-        // iterate over all the identifiers
+        // Retrieve all (responses for) the attributes and the response for the master secret
         List<Integer> disclosed = vd.getDisclosedAttributeIdxs();
-        for(int i = 0; i < vd.numberOfAttributes(); i++) {
+        // NOTE: master secret has index 0; so attributes are indexed starting from 1
+        for(int i = 0; i <= vd.numberOfAttributes(); i++) {
 			String attrName = vd.getAttributeName(i);
 			boolean is_disclosed = disclosed.contains(i);
 			commands.add(new ProtocolCommand(
@@ -841,7 +830,8 @@ public class IdemixSmartcard {
 		HashMap<Integer, BigInteger> a_responses = new HashMap<Integer, BigInteger>();
 		HashMap<Integer, BigInteger> a_disclosed = new HashMap<Integer, BigInteger>();
 
-        for(int i = 0; i < vd.numberOfAttributes(); i++ ) {
+		// NOTE: master secret has index 0; so attribute are indexed starting from 1
+        for(int i = 0; i <= vd.numberOfAttributes(); i++ ) {
 			String name = "attr_" + vd.getAttributeName(i);
 			if (vd.isDisclosed(i)) {
 				a_disclosed.put(i, new BigInteger(1, responses.get(name).getData()));
