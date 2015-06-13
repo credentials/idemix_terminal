@@ -46,6 +46,8 @@ import org.irmacard.credentials.idemix.irma.IRMAIdemixDisclosureProof;
 import org.irmacard.credentials.idemix.messages.IssueCommitmentMessage;
 import org.irmacard.credentials.idemix.messages.IssueSignatureMessage;
 import org.irmacard.credentials.idemix.proofs.ProofU;
+import org.irmacard.idemix.util.AdminRemove;
+import org.irmacard.idemix.util.AdminSelect;
 import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IssuanceSetupData;
@@ -450,8 +452,6 @@ public class IdemixSmartcard {
      * @return
      */
     public static ProtocolCommand startIssuanceCommand(CardVersion cv, IdemixCredentialDescription cd) {
-    	int l_H = cd.getPublicKey().getSystemParameters().l_h;
-
     	// FIXME: flags set to 0 for now
     	IdemixFlags flags = new IdemixFlags();
 
@@ -853,14 +853,12 @@ public class IdemixSmartcard {
 
     public static ProtocolCommand selectCredentialCommand(CardVersion cv, short id) {
         if (cv.newer(new CardVersion(0,7,2))) {
-            byte[] data = new byte[2];
-            data[0] = (byte) (id >> 8);
-            data[1] = (byte) (id & 0xff);
+        	AdminSelect select = new AdminSelect(id);
 
             return new ProtocolCommand(
                 "selectcredential",
                 "Select a credential for further modifications",
-                new CommandAPDU(CLA_IRMACARD, INS_ADMIN_CREDENTIAL, 0, 0, data));
+                new CommandAPDU(CLA_IRMACARD, INS_ADMIN_CREDENTIAL, 0, 0, select.getBytes()));
         } else {
             return new ProtocolCommand(
                 "selectcredential",
@@ -893,17 +891,17 @@ public class IdemixSmartcard {
     }
 
     public static ProtocolCommand removeCredentialCommand(CardVersion cv, short id) {
-        byte[] empty = {};
+        AdminRemove remove_data = new AdminRemove(getTimeStamp());
         if (cv.newer(new CardVersion(0,7,2))) {
             return new ProtocolCommand(
                     "removecredential",
                     "Remove credential (id " + id + ")",
-                    new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, 0, 0, addTimeStamp(empty)));
+                    new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, 0, 0, remove_data.getBytes()));
         } else {
             return new ProtocolCommand(
                     "removecredential",
                     "Remove credential (id " + id + ")",
-                    new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, id >> 8, id & 0xff, addTimeStamp(empty)));
+                    new CommandAPDU(CLA_IRMACARD, INS_ADMIN_REMOVE, id >> 8, id & 0xff, remove_data.getBytes()));
         }
     }
 

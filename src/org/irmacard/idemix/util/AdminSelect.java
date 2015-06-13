@@ -21,20 +21,48 @@ package org.irmacard.idemix.util;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Represents the data that is sent along with a credential select command. This
+ * data specifies the credential id.
+ */
 public class AdminSelect {
 	private short id;
 
 	public static final int SIZE = 2;
 
+	/**
+	 * Construct an AdminSelect object using a credential id.
+	 * @param id		the credential id
+	 */
 	public AdminSelect(short id) {
 		this.id = id;
 	}
 
+	/**
+	 * Construct an AdminSelect object from its byte-encoding.
+	 * @param data		a byte-encoding of the object
+	 */
 	public AdminSelect(byte[] data) {
 		ByteBuffer buffer = ByteBuffer.wrap(data);
 		id = buffer.getShort();
 	}
 
+	/**
+	 * Returns the default byte-encoding of the object.
+	 *
+	 * @return the byte-encoding of the object
+	 */
+	public byte[] getBytes() {
+		ByteBuffer buffer = ByteBuffer.allocate(SIZE);
+
+		return buffer.putShort(id).array();
+	}
+
+	/**
+	 * Returns the credential id.
+	 *
+	 * @return	the credential id
+	 */
 	public short getID() {
 		return id;
 	}

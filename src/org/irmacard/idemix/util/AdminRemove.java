@@ -21,6 +21,11 @@ package org.irmacard.idemix.util;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Represents the extra data that is sent along with a credential remove
+ * command. These data contain a time stamp to update the card's current time
+ * estimate. The card uses it to log the credential's removal.
+ */
 public class AdminRemove {
 	private static final int SIZE_TIMESTAMP = 4;
 
@@ -28,15 +33,39 @@ public class AdminRemove {
 
 	private int timestamp;
 
+	/**
+	 * Construct an AdminRemove object using a time stamp.
+	 * @param timestamp		the time stamp
+	 */
 	public AdminRemove(int timestamp) {
 		this.timestamp = timestamp;
 	}
 
+	/**
+	 * Construct an AdminRemove object from its byte-encoding.
+	 * @param data			a byte-encoding of the object
+	 */
 	public AdminRemove(byte[] data) {
 		ByteBuffer buffer = ByteBuffer.wrap(data);
 		timestamp = buffer.getInt();
 	}
 
+	/**
+	 * Returns the default byte-encoding of the object.
+	 *
+	 * @return the byte-encoding of the object
+	 */
+	public byte[] getBytes() {
+		ByteBuffer buffer = ByteBuffer.allocate(SIZE);
+
+		return buffer.putInt(timestamp).array();
+	}
+
+	/**
+	 * Returns the time stamp encoded into this object.
+	 *
+	 * @return	the time stamp
+	 */
 	public int getTimeStamp() {
 		return timestamp;
 	}

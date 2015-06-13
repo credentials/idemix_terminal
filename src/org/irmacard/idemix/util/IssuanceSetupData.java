@@ -24,7 +24,11 @@ import java.nio.ByteBuffer;
 
 import org.irmacard.idemix.IdemixSmartcard;
 
-
+/**
+ * Represents the data that is sent to describe a new issuance. These data
+ * describe the credential id, the size of the credential, a time stamp (the
+ * card uses it to log the issuance) and the context of this issuance.
+ */
 public class IssuanceSetupData {
 	// TODO: reference IdemixSystemParameters after fixing dependencies
 	public static final int SIZE_CONTEXT = 32;
@@ -41,6 +45,21 @@ public class IssuanceSetupData {
 	private BigInteger context;
 	private int timestamp;
 
+	/**
+	 * Construct an IssuanceSetupData object by pass its data fields
+	 *
+	 * @param id
+	 *            the credential id
+	 * @param size
+	 *            the number of attributes of the credential (including
+	 *            metadata)
+	 * @param flags
+	 *            the IdemixFlags (see @IdemixFlags)
+	 * @param context
+	 *            the context that is to be used for the proofs
+	 * @param timestamp
+	 *            the time stamp (in seconds since epoch)
+	 */
 	public IssuanceSetupData(short id, short size, IdemixFlags flags, BigInteger context, int timestamp) {
 		this.id = id;
 		this.size = size;
@@ -49,6 +68,12 @@ public class IssuanceSetupData {
 		this.timestamp = timestamp;
 	}
 
+	/**
+	 * Construct an IssuanceSetupData object from its byte-encoding.
+	 *
+	 * @param data
+	 *            a byte-encoding of the object
+	 */
 	public IssuanceSetupData(byte[] data) {
 		ByteBuffer buffer = ByteBuffer.wrap(data);
 
@@ -66,6 +91,11 @@ public class IssuanceSetupData {
 		timestamp = buffer.getInt();
 	}
 
+	/**
+	 * Returns the default byte-encoding of the object.
+	 *
+	 * @return the byte-encoding of the object
+	 */
 	public byte[] getBytes() {
 		ByteBuffer buffer = ByteBuffer.allocate(SIZE);
 
@@ -75,6 +105,11 @@ public class IssuanceSetupData {
 				.putInt(timestamp).array();
 	}
 
+	/**
+	 * Returns the legacy byte-encoding of the object
+	 *
+	 * @return the legacy byte-encoding of the object
+	 */
 	public byte[] getBytesLegacy() {
 		ByteBuffer buffer = ByteBuffer.allocate(SIZE_CRED_ID + SIZE_CONTEXT + SIZE_SIZE + SIZE_TIMESTAMP);
 
@@ -84,6 +119,14 @@ public class IssuanceSetupData {
 				.putInt(timestamp).array();
 	}
 
+	/**
+	 * Returns the byte-encoding of the object appropriate for the given
+	 * CardVersion.
+	 *
+	 * @param cv
+	 *            the card version
+	 * @return the appropriate byte-encoding.
+	 */
 	public byte[] getBytes(CardVersion cv) {
 		if (cv.newer(new CardVersion(0, 7, 2))) {
         	return getBytes();
@@ -92,22 +135,48 @@ public class IssuanceSetupData {
 		}
 	}
 
+	/**
+	 * Returns the credential id.
+	 *
+	 * @return the credential id
+	 */
 	public short getID() {
 		return id;
 	}
 
+	/**
+	 * Returns the number of attributes in the credential (including metadata,
+	 * excluding the master secret).
+	 *
+	 * @return the number of attributes in the credential
+	 */
 	public short getSize() {
 		return size;
 	}
 
+	/**
+	 * Returns the idemix flag associated with this issuance, see @IdemixFlags.
+	 *
+	 * @return The idemix flags.
+	 */
 	public IdemixFlags getFlags() {
 		return flags;
 	}
 
+	/**
+	 * Returns the context associated with this issuance.
+	 *
+	 * @return The context
+	 */
 	public BigInteger getContext() {
 		return context;
 	}
 
+	/**
+	 * Returns the time stamp (in seconds since epoch) associated with this issuance.
+	 *
+	 * @return the timestamp (in seconds since epoch)
+	 */
 	public int getTimestamp() {
 		return timestamp;
 	}
