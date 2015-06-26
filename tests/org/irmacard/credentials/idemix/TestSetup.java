@@ -28,7 +28,7 @@ import java.nio.file.Paths;
 
 import javax.smartcardio.CardException;
 
-import net.sourceforge.scuba.smartcards.CardService;
+import net.sf.scuba.smartcards.CardService;
 
 import org.irmacard.credentials.idemix.smartcard.CardChangedListener;
 import org.irmacard.credentials.idemix.smartcard.IRMACard;

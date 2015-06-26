@@ -6,7 +6,7 @@ import java.util.List;
 
 import javax.smartcardio.CardException;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CardServiceException;
 
 import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.CredentialsException;

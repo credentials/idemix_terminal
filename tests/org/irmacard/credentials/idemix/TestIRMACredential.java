@@ -28,11 +28,11 @@ import java.net.URI;
 
 import javax.smartcardio.CardException;
 
-import net.sourceforge.scuba.smartcards.CardService;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.ProtocolCommands;
-import net.sourceforge.scuba.smartcards.ProtocolResponse;
-import net.sourceforge.scuba.smartcards.ProtocolResponses;
+import net.sf.scuba.smartcards.CardService;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.ProtocolCommands;
+import net.sf.scuba.smartcards.ProtocolResponse;
+import net.sf.scuba.smartcards.ProtocolResponses;
 
 import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.CredentialsException;

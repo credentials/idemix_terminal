@@ -21,7 +21,7 @@ package org.irmacard.idemix.util;
 
 import java.io.Serializable;
 
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.util.Hex;
 
 public class CardVersion implements Comparable<CardVersion>, Serializable {
 

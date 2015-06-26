@@ -22,7 +22,7 @@ package org.irmacard.credentials.idemix;
 
 import java.math.BigInteger;
 
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.util.Hex;
 
 public class Test {
 

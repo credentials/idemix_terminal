@@ -29,8 +29,8 @@ import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.TerminalCardService;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.TerminalCardService;
 import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.util.IdemixLogEntry;
 import org.junit.Test;

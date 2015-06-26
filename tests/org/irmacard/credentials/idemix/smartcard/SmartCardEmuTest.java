@@ -2,9 +2,9 @@ package org.irmacard.credentials.idemix.smartcard;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ProtocolCommand;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ProtocolCommand;
+import net.sf.scuba.smartcards.ResponseAPDU;
 
 import org.irmacard.idemix.IdemixSmartcard;
 import org.junit.Test;
