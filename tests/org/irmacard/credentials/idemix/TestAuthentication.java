@@ -39,9 +39,9 @@ import java.util.Date;
 
 import javax.smartcardio.CardException;
 
-import net.sourceforge.scuba.smartcards.CardService;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.smartcards.CardService;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.util.Hex;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.ejbca.cvc.AlgorithmUtil;

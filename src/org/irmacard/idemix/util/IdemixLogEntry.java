@@ -22,7 +22,7 @@ package org.irmacard.idemix.util;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.util.Hex;
 
 /**
  * Low-level interface to the logs stored on the IRMA-card.

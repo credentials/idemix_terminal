@@ -7,3 +7,5 @@ idemix_terminal.*jar
 build/
 .gradle/
 .settings
+.idea/
+*.iml

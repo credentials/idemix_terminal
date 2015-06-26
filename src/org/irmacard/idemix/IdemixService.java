@@ -27,15 +27,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
-import net.sourceforge.scuba.smartcards.CardService;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ProtocolCommand;
-import net.sourceforge.scuba.smartcards.ProtocolCommands;
-import net.sourceforge.scuba.smartcards.ProtocolResponse;
-import net.sourceforge.scuba.smartcards.ProtocolResponses;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.smartcards.CardService;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ProtocolCommand;
+import net.sf.scuba.smartcards.ProtocolCommands;
+import net.sf.scuba.smartcards.ProtocolResponse;
+import net.sf.scuba.smartcards.ProtocolResponses;
+import net.sf.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.util.Hex;
 
 import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;

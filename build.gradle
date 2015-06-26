@@ -21,12 +21,12 @@ repositories {
 
 dependencies {
     compile "org.irmacard.credentials:credentials_idemix:0.8.1"
-    compile "net.sourceforge.scuba:scuba_smartcards:0.0.3"
+    compile "net.sf.scuba:scuba_smartcards:0.0.7-irma"
     compile 'com.google.code.gson:gson:2.2.2'
 
     testCompile files('lib/cert-cvc-1.3.0.jar')
     testCompile "junit:junit:4.11"
-    testCompile "net.sourceforge.scuba:scuba_sc_j2se:0.0.3"
+    testCompile "net.sf.scuba:scuba_sc_j2se:0.0.7-irma"
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {

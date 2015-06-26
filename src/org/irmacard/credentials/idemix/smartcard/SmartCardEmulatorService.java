@@ -22,10 +22,10 @@ package org.irmacard.credentials.idemix.smartcard;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.sourceforge.scuba.smartcards.CardService;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.smartcards.CardService;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ResponseAPDU;
 
 public class SmartCardEmulatorService extends CardService {
 	private static final long serialVersionUID = 1L;

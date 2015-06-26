@@ -30,10 +30,10 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.util.Hex;
 
 import org.irmacard.credentials.CredentialsException;
 import org.irmacard.credentials.idemix.CredentialBuilder;

@@ -30,12 +30,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ProtocolCommand;
-import net.sourceforge.scuba.smartcards.ProtocolCommands;
-import net.sourceforge.scuba.smartcards.ProtocolErrors;
-import net.sourceforge.scuba.smartcards.ProtocolResponses;
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ProtocolCommand;
+import net.sf.scuba.smartcards.ProtocolCommands;
+import net.sf.scuba.smartcards.ProtocolErrors;
+import net.sf.scuba.smartcards.ProtocolResponses;
 
 import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.idemix.IdemixPublicKey;
