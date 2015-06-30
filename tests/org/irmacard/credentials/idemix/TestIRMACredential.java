@@ -99,6 +99,13 @@ public class TestIRMACredential {
 
 	@Test
 	@Category(VerificationTest.class)
+	public void verifyAlbronStudentCardNone() throws CardException,
+			CredentialsException, InfoException {
+		verify("Albron", "studentCardNone");
+	}
+
+	@Test
+	@Category(VerificationTest.class)
 	public void verifyRootCredentialAsync() throws CredentialsException, CardException, CardServiceException, InfoException {
 		IdemixVerificationDescription vd =
 				new IdemixVerificationDescription("Surfnet", "rootNone");
