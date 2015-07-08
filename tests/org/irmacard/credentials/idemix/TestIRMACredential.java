@@ -39,8 +39,13 @@ import org.irmacard.credentials.CredentialsException;
 import org.irmacard.credentials.idemix.categories.IssueTest;
 import org.irmacard.credentials.idemix.categories.RemovalTest;
 import org.irmacard.credentials.idemix.categories.VerificationTest;
+import org.irmacard.credentials.idemix.descriptions.IdemixCredentialDescription;
 import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.credentials.idemix.info.IdemixKeyStore;
+import org.irmacard.credentials.idemix.irma.IRMAIdemixIssuer;
+import org.irmacard.credentials.idemix.messages.IssueCommitmentMessage;
+import org.irmacard.credentials.idemix.messages.IssueSignatureMessage;
+import org.irmacard.credentials.idemix.suites.IssuanceTests;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
@@ -82,6 +87,49 @@ public class TestIRMACredential {
 	public void issueRootCredential() throws CardException, CredentialsException, CardServiceException, InfoException {
 		issue("Surfnet", "root", getSurfnetAttributes());
 	}
+
+    @Test
+    @Category(IssuanceTests.class)
+    public void issueRootCredentialAsync()
+            throws CredentialsException, CardException, CardServiceException, InfoException {
+        CredentialDescription cd = DescriptionStore.getInstance().getCredentialDescriptionByName("Surfnet", "root");
+
+        // Open channel to card
+        IdemixService service = new IdemixService(TestSetup.getCardService());
+        IdemixCredentials ic = new IdemixCredentials(service);
+        ic.connect();
+        service.sendPin(TestSetup.DEFAULT_CRED_PIN);
+
+        // Select applet and process version
+        ProtocolResponse select_response = service.execute(IdemixSmartcard.selectApplicationCommand);
+        CardVersion cv = new CardVersion(select_response.getData());
+
+        // Generate a nonce (you need this for verification as well)
+        IdemixCredentialDescription icd = new IdemixCredentialDescription(cd);
+        BigInteger nonce1 = icd.generateNonce();
+
+        // Generate attributes
+        Attributes attributes = getSurfnetAttributes();
+        attributes.setCredentialID(cd.getId());
+
+        // Initialize the issuer
+        IRMAIdemixIssuer issuer = new IRMAIdemixIssuer(icd.getPublicKey(),
+                IdemixKeyStore.getInstance().getSecretKey(cd), icd.getContext());
+
+        // Get card commitments
+        ProtocolCommands commands = IdemixSmartcard.requestIssueCommitmentCommands(cv,
+                icd, attributes, nonce1);
+        ProtocolResponses responses = service.execute(commands);
+        IssueCommitmentMessage commit_msg = IdemixSmartcard.processIssueCommitmentCommands(cv, responses);
+
+        // Create signature
+        IssueSignatureMessage signature_msg =
+                issuer.issueSignature(commit_msg, icd, attributes, nonce1);
+        commands = IdemixSmartcard.requestIssueSignatureCommands(cv, icd, signature_msg);
+        responses = service.execute(commands);
+
+        service.close();
+    }
 
 	@Test
 	@Category(VerificationTest.class)
