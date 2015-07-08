@@ -8,3 +8,4 @@ build/
 .idea/
 *.iml
 irma_configuration
+card.json
