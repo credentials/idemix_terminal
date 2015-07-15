@@ -884,8 +884,10 @@ public class IdemixSmartcard {
 		Attributes attributes = new Attributes();
 		for(int i = 1; i <= cd.numberOfAttributes(); i++) {
 			String attrName = cd.getAttributeName(i);
-			attributes.add(attrName,
-					responses.get("attr_" + attrName).getData());
+			// Be consistent with regular verify and drop leading zeros
+			byte[] attBytes = new BigInteger(1,
+					responses.get("attr_" + attrName).getData()).toByteArray();
+			attributes.add(attrName, attBytes);
 		}
 		return attributes;
     }
