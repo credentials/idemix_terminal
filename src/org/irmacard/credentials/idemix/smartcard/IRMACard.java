@@ -59,6 +59,8 @@ public class IRMACard {
 
 	protected final static int LOG_ENTRIES = 30;
 
+	List<VerificationStartListener> verificationListeners = new LinkedList<>();
+
 	enum State {
 		IDLE, APPLET_SELECTED, ISSUE, PROVE
 	};
@@ -122,6 +124,10 @@ public class IRMACard {
 		}
 
 		state = State.IDLE;
+	}
+
+	public void addVerificationListener(VerificationStartListener listener) {
+		verificationListeners.add(listener);
 	}
 
 	protected ResponseAPDU processAPDU(CommandAPDU apdu) {
@@ -637,6 +643,13 @@ public class IRMACard {
 			return sw(ISO7816.SW_KEY_NOT_FOUND);
 		}
 		credential = credentials.get(verificationSetup.getID());
+
+		// All checks passed: signal the listeners that we're going to verify
+		for (VerificationStartListener listener: verificationListeners) {
+			if (listener != null) {
+				listener.verificationStarting(verificationSetup);
+			}
+		}
 
 		// Verify selection validity
 		if(!verifySelection()) {
