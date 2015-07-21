@@ -54,12 +54,16 @@ import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.IdemixSmartcard;
 import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixLogEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An Idemix specific implementation of the credentials interface.
  */
 public class IdemixCredentials extends BaseCredentials {
 	IdemixService service = null;
+
+	private static final Logger logger = LoggerFactory.getLogger(IdemixCredentials.class);
 
 	public IdemixCredentials(CardService cs) {
 		super(cs);
@@ -281,8 +285,8 @@ public class IdemixCredentials extends BaseCredentials {
 			Date timestamp = l.getTimestamp();
 			CredentialDescription credential = ds.getCredentialDescription(l.getCredential());
 			if(credential == null) {
-				System.out.println("This shouldn't happen, cannot find the description");
-				l.print();
+				logger.warn("This shouldn't happen, cannot find the description");
+				logger.warn(l.toString());
 				continue;
 			}
 

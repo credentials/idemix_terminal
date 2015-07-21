@@ -180,23 +180,37 @@ public class IdemixLogEntry {
 		return data;
 	}
 
-	public void print() {
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+
 		switch(action) {
 		case VERIFY:
-			System.out.println("VERIFICATION");
-			System.out.println("Disclosed: " + Hex.shortToHexString(disclose));
+			sb.append("VERIFICATION\n")
+					.append("Disclosed: ")
+					.append(Hex.shortToHexString(disclose))
+					.append("\n");
 			break;
 		case ISSUE:
-			System.out.println("ISSUANCE");
+			sb.append("ISSUANCE\n");
 			break;
 		case REMOVE:
-			System.out.println("REMOVE");
+			sb.append("REMOVE\n");
 			break;
 		case NONE:
-			System.out.println("-- EMPTY ENTRY --");
-			return;
+			return "-- EMPTY ENTRY --";
 		}
-		System.out.println("Timestamp: " + getTimestamp().getTime());
-		System.out.println("Credential: " + credential);
+
+		sb.append("Timestamp: ")
+				.append(getTimestamp().getTime())
+				.append("\n")
+				.append("Credential: ")
+				.append(credential);
+
+		return sb.toString();
+	}
+
+	public void print() {
+		System.out.println(this.toString());
 	}
 }

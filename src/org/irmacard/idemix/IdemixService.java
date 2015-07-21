@@ -41,6 +41,9 @@ import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
  *
@@ -74,6 +77,11 @@ public class IdemixService extends CardService {
      * Card Version, this is read when the applet is selected
      */
     protected CardVersion cardVersion = null;
+
+    /**
+     * Logger
+     */
+    private static final Logger logger = LoggerFactory.getLogger(IdemixService.class);
 
     /**************************************************************************/
     /* SCUBA / Smart Card Setup                                               */
@@ -110,7 +118,7 @@ public class IdemixService extends CardService {
             service.open();
         }
         cardVersion = selectApplication();
-        System.out.println("Found card application: " + cardVersion.toString());
+        logger.trace("Found card application: {}", cardVersion);
     }
 
     /**
@@ -133,8 +141,7 @@ public class IdemixService extends CardService {
     throws CardServiceException {
 
         if (VERBOSE) {
-            System.out.println();
-            System.out.println("C: " + Hex.bytesToHexString(capdu.getBytes()));
+            logger.trace("C: {}", Hex.bytesToHexString(capdu.getBytes()));
         }
 
         long start = System.nanoTime();
@@ -142,8 +149,8 @@ public class IdemixService extends CardService {
         long duration = (System.nanoTime() - start)/1000000;
 
         if (VERBOSE) {
-            System.out.println(" duration: " + duration + " ms");
-            System.out.println("R: " + Hex.bytesToHexString(rapdu.getBytes()));
+            logger.trace(" duration: " + duration + " ms");
+            logger.trace("R: {}", Hex.bytesToHexString(rapdu.getBytes()));
         }
 
         return rapdu;
@@ -235,8 +242,8 @@ public class IdemixService extends CardService {
         try {
             response = execute(IdemixSmartcard.selectApplicationCommand);
         } catch (CardServiceException e) {
-            System.err.println(e.getMessage());
-            System.err.println("Failed to select application, now looking for legacy version");
+            logger.error(e.getMessage());
+            logger.error("Failed to select application, now looking for legacy version");
             response = execute(IdemixSmartcard.selectApplicationCommand_0_7);
         }
         return new CardVersion(response.getData());
@@ -476,7 +483,7 @@ public class IdemixService extends CardService {
                 byte[] log_entry = Arrays.copyOfRange(data, LOG_ENTRY_SIZE
                         * entry, LOG_ENTRY_SIZE * (entry + 1));
 
-                System.out.println(Hex.bytesToHexString(log_entry));
+                logger.trace(Hex.bytesToHexString(log_entry));
                 list.add(new IdemixLogEntry(log_entry));
             }
         }
@@ -493,7 +500,7 @@ public class IdemixService extends CardService {
     }
 
     public CardVersion getCardVersion() {
-        System.out.println("[IdemixService] Returned version: " + cardVersion);
+        logger.trace("[IdemixService] Returned version: " + cardVersion);
         return cardVersion;
     }
 }

@@ -52,6 +52,8 @@ import org.irmacard.idemix.util.CardVersion;
 import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IssuanceSetupData;
 import org.irmacard.idemix.util.VerificationSetupData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
@@ -61,6 +63,8 @@ import org.irmacard.idemix.util.VerificationSetupData;
  *          $LastChangedDate: 2011-04-28 16:31:47 +0200 (Thu, 28 Apr 2011) $
  */
 public class IdemixSmartcard {
+
+    private static final Logger logger = LoggerFactory.getLogger(IdemixSmartcard.class);
 
     /**
      * AID of the IRMAcard application: ASCII encoding of "IRMAcard".
@@ -596,8 +600,8 @@ public class IdemixSmartcard {
         ProtocolCommands commands = new ProtocolCommands();
         int L_m = cd.getPublicKey().getSystemParameters().l_m;
 
-        attributes.print();
-        System.out.println(cd.getCredentialDescription().getAttributeNames());
+        logger.trace(attributes.toString());
+        logger.trace(cd.getCredentialDescription().getAttributeNames().toString());
 
         for (int i = 1; i <= cd.numberOfAttributes(); i++) {
         	BigInteger attr = new BigInteger(1, attributes.get(cd.getAttributeName(i)));

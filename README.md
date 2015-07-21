@@ -111,6 +111,7 @@ Internal dependencies:
 External dependencies:
 
  * [Google GSON](https://code.google.com/p/google-gson/)
+ * [Simple Logging Facade for Java (SLF4J)](http://www.slf4j.org/), for logging and outputting errors. In order to see the output, you should choose an implementation as described in the [SLF4J manual](http://www.slf4j.org/manual.html#swapping) (if you don't do this, a warning will be printed saying that you should choose an implementation, and there will be no further output). If you use Gradle, you could for example include `org.slf4j:slf4j-jdk14:1.7.12` as a dependency. If you are developing on Android you can consider using [android-logger](https://github.com/noveogroup/android-logger) (`com.noveogroup.android:android-logger:1.3.5`).
 
 For running the tests:
 

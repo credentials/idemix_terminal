@@ -53,6 +53,8 @@ import org.irmacard.idemix.util.IdemixLogEntry;
 import org.irmacard.idemix.util.IssuanceSetupData;
 import org.irmacard.idemix.util.VerificationSetupData;
 
+import org.slf4j.LoggerFactory;
+
 public class IRMACard {
 	protected final static byte CLA_SECURE_MESSAGING = (byte) 0x0C;
 	protected final static byte CLA_COMMAND_CHAINING = (byte) 0x10;
@@ -60,6 +62,8 @@ public class IRMACard {
 	protected final static int LOG_ENTRIES = 30;
 
 	List<VerificationStartListener> verificationListeners = new LinkedList<>();
+
+	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(IRMACard.class);
 
 	enum State {
 		IDLE, APPLET_SELECTED, ISSUE, PROVE
@@ -153,7 +157,7 @@ public class IRMACard {
 				return processPINChange(apdu);
 			default:
 				Log.warning("Unknown instruction");
-				System.out.println(Hex.bytesToHexString(apdu.getBytes()));
+				logger.warn("Unknown instruction: {}", Hex.bytesToHexString(apdu.getBytes()));
 				return sw(ISO7816.SW_INS_NOT_SUPPORTED);
 			}
 		case IdemixSmartcard.CLA_IRMACARD:
@@ -168,7 +172,7 @@ public class IRMACard {
 				return processAdministrationCommand(apdu);
 			default:
 				Log.warning("Unknown instruction");
-				System.out.println(Hex.bytesToHexString(apdu.getBytes()));
+				logger.warn("Unknown instruction: {}", Hex.bytesToHexString(apdu.getBytes()));
 				return sw(ISO7816.SW_INS_NOT_SUPPORTED);
 			}
 		default:
