@@ -84,6 +84,9 @@ public class SmartCardEmulatorService extends CardService {
 
 	@Override
 	public ResponseAPDU transmit(CommandAPDU apdu) throws CardServiceException {
+		if (!open) {
+			throw new CardServiceException("Card hasn't been opened");
+		}
 		return card.processAPDU(apdu);
 	}
 
