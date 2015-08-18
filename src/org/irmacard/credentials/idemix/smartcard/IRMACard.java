@@ -648,17 +648,17 @@ public class IRMACard {
 		}
 		credential = credentials.get(verificationSetup.getID());
 
+		// Verify selection validity
+		if(!verifySelection()) {
+			credential = null;
+			return sw(ISO7816.SW_WRONG_DATA);
+		}
+
 		// All checks passed: signal the listeners that we're going to verify
 		for (VerificationStartListener listener: verificationListeners) {
 			if (listener != null) {
 				listener.verificationStarting(verificationSetup);
 			}
-		}
-
-		// Verify selection validity
-		if(!verifySelection()) {
-			credential = null;
-			return sw(ISO7816.SW_WRONG_DATA);
 		}
 
 		// TODO: check if pin required, and check it
