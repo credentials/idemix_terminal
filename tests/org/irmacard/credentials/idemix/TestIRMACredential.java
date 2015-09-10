@@ -36,6 +36,7 @@ import org.irmacard.credentials.idemix.categories.VerificationTest;
 import org.irmacard.credentials.idemix.descriptions.IdemixCredentialDescription;
 import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.credentials.idemix.info.IdemixKeyStore;
+import org.irmacard.credentials.idemix.irma.IRMAIdemixDisclosureProof;
 import org.irmacard.credentials.idemix.irma.IRMAIdemixIssuer;
 import org.irmacard.credentials.idemix.messages.IssueCommitmentMessage;
 import org.irmacard.credentials.idemix.messages.IssueSignatureMessage;
@@ -156,7 +157,6 @@ public class TestIRMACredential {
 	public void verifyRootCredentialAsync() throws CredentialsException, CardException, CardServiceException, InfoException {
 		IdemixVerificationDescription vd =
 				new IdemixVerificationDescription("Surfnet", "rootNone");
-		IdemixCredentials ic = new IdemixCredentials(null);
 
 		// Open channel to card
 		IdemixService service = new IdemixService(TestSetup.getCardService());
@@ -171,17 +171,21 @@ public class TestIRMACredential {
 		BigInteger nonce = vd.generateNonce();
 
 		// Get prove commands, and send them to card
-		ProtocolCommands commands = ic.requestProofCommands(vd, nonce);
+		ProtocolCommands commands = IdemixSmartcard
+				.buildProofCommands(cv, nonce, vd);
 		ProtocolResponses responses = service.execute(commands);
 
 		// Process the responses
-		Attributes attr = ic.verifyProofResponses(vd, nonce, responses);
+		IRMAIdemixDisclosureProof proof = IdemixSmartcard
+				.processBuildProofResponses(cv, responses, vd);
+		Attributes attr = proof.verify(vd, nonce);
 
 		if (attr == null) {
 			fail("The proof does not verify");
 		} else {
 			System.out.println("Proof verified");
 		}
+
 		service.close();
 	}
 

@@ -176,12 +176,7 @@ public class IdemixCredentials extends BaseCredentials {
 		}
 	}
 
-	public ProtocolCommands requestProofCommands(
-			IdemixVerificationDescription vd, BigInteger nonce) {
-		return IdemixSmartcard.buildProofCommands(service.getCardVersion(), nonce, vd);
-	}
-
-	public Attributes verifyProofResponses(IdemixVerificationDescription vd,
+	private Attributes verifyProofResponses(IdemixVerificationDescription vd,
 			BigInteger nonce, ProtocolResponses responses)
 			throws CredentialsException {
 

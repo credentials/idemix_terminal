@@ -61,7 +61,6 @@ First, we select the credential as before
 ```Java
 IdemixVerificationDescription vd = new IdemixVerificationDescription(
     "Surfnet", "rootNone");
-IdemixCredentials ic = new IdemixCredentials(null);
 ```
 
 To keep this example simple, we use the regular `IdemixService` to send the commands to the card. Replace this with whatever suits your application best.
@@ -89,14 +88,17 @@ BigInteger nonce = vd.generateNonce();
 Next, we generate the actual verification commands, and send them to the card.
 
 ```Java
-ProtocolCommands commands = ic.requestProofCommands(vd, nonce);
+ProtocolCommands commands = IdemixSmartcard
+		.buildProofCommands(cv, nonce, vd);
 ProtocolResponses responses = service.execute(commands);
 ```
                 
-Finally, we verify the attributes. Here we use the nonce that we generated earlier.
+Finally, we verify reconstruct the proof from the responses and extract the attributes. Here we use the nonce that we generated earlier.
 
 ```Java
-Attributes attr = ic.verifyProofResponses(vd, nonce, responses);
+IRMAIdemixDisclosureProof proof = IdemixSmartcard
+		.processBuildProofResponses(cv, responses, vd);
+Attributes attr = proof.verify(vd, nonce);
 ```
 
 ## Prerequisites
