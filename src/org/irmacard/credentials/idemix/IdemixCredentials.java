@@ -159,13 +159,7 @@ public class IdemixCredentials extends BaseCredentials {
 		verifyPrepare();
 
 		CardVersion cv = service.getCardVersion();
-		// TODO: maybe not wrap it but handle exceptions better?
-		BigInteger nonce = null;
-		try {
-			nonce = desc.generateNonce();
-		} catch (InfoException e) {
-			throw new CredentialsException(e);
-		}
+		BigInteger nonce = desc.generateNonce();
 
 		// Run the protocol
 		try {
