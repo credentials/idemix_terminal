@@ -410,6 +410,32 @@ public class TestIRMACredential {
 
 	@Test
 	@Category(IssueTest.class)
+	public void issueIDDocumentCredential() throws InfoException, CardException,
+	        CredentialsException, CardServiceException {
+	    Attributes attributes = new Attributes();
+	    attributes.add("type", "passport".getBytes());
+	    attributes.add("number", "HQVA1ZBR3".getBytes());
+
+	    issue("MijnOverheid", "idDocument", attributes);
+	}
+
+	@Test
+	@Category(VerificationTest.class)
+	public void verifyIDDocumentAll() throws CardException, CredentialsException, InfoException {
+	    verify("MijnOverheid", "idDocumentAll");
+	}
+
+    @Test
+    @Category(RemovalTest.class)
+    public void removeIDDocument() throws InfoException, CardException,
+            CredentialsException, CardServiceException {
+        CredentialDescription cd = DescriptionStore.getInstance()
+                .getCredentialDescriptionByName("MijnOverheid", "idDocument");
+        remove(cd);
+    }
+
+	@Test
+	@Category(IssueTest.class)
 	public void issueIRMATubeMemberCredential() throws CardException, CredentialsException,
 			CardServiceException, InfoException {
 		Attributes attributes = new Attributes();
