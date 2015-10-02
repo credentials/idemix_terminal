@@ -415,6 +415,8 @@ public class TestIRMACredential {
 	    Attributes attributes = new Attributes();
 	    attributes.add("type", "passport".getBytes());
 	    attributes.add("number", "HQVA1ZBR3".getBytes());
+	    attributes.add("expires", "Jan 1, 2020".getBytes());
+	    attributes.add("nationality", "NLD".getBytes());
 
 	    issue("MijnOverheid", "idDocument", attributes);
 	}
