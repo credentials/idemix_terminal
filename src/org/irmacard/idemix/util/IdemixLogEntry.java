@@ -113,6 +113,7 @@ public class IdemixLogEntry {
 		timestamp = 0;
 		credential = 0;
 		data = new byte[SIZE_DETAILS];
+		terminal = new byte[SIZE_TERMINAL];
 		disclose = 0;
 	}
 
