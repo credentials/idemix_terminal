@@ -41,14 +41,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import net.sf.scuba.smartcards.CommandAPDU;
-import net.sf.scuba.smartcards.ISO7816;
-import net.sf.scuba.smartcards.ProtocolCommand;
-import net.sf.scuba.smartcards.ProtocolCommands;
-import net.sf.scuba.smartcards.ProtocolErrors;
-import net.sf.scuba.smartcards.ProtocolResponses;
-
 import org.irmacard.credentials.Attributes;
+import org.irmacard.credentials.CredentialsException;
 import org.irmacard.credentials.idemix.IdemixPublicKey;
 import org.irmacard.credentials.idemix.IdemixSystemParameters;
 import org.irmacard.credentials.idemix.descriptions.IdemixCredentialDescription;
@@ -65,6 +59,13 @@ import org.irmacard.idemix.util.IssuanceSetupData;
 import org.irmacard.idemix.util.VerificationSetupData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ProtocolCommand;
+import net.sf.scuba.smartcards.ProtocolCommands;
+import net.sf.scuba.smartcards.ProtocolErrors;
+import net.sf.scuba.smartcards.ProtocolResponses;
 
 /**
  * Idemix Smart Card Interface based on a SCUBA Card Service.
@@ -606,8 +607,11 @@ public class IdemixSmartcard {
      * @param spec the issuance specification for the ordering of the values.
      * @param values the attributes to be set.
      * @return
+     * @throws CredentialsException if attributes are missing
      */
-    public static ProtocolCommands setAttributesCommands(CardVersion cv, IdemixCredentialDescription cd, Attributes attributes) {
+    public static ProtocolCommands setAttributesCommands(CardVersion cv,
+            IdemixCredentialDescription cd, Attributes attributes)
+                    throws CredentialsException {
         ProtocolCommands commands = new ProtocolCommands();
         int L_m = cd.getPublicKey().getSystemParameters().l_m;
 
@@ -615,7 +619,11 @@ public class IdemixSmartcard {
         logger.trace(cd.getCredentialDescription().getAttributeNames().toString());
 
         for (int i = 1; i <= cd.numberOfAttributes(); i++) {
-        	BigInteger attr = new BigInteger(1, attributes.get(cd.getAttributeName(i)));
+            byte[] attribute = attributes.get(cd.getAttributeName(i));
+            if(attribute == null) {
+                throw new CredentialsException("Mandatory attribute " + cd.getAttributeName(i) + " is missing");
+            }
+            BigInteger attr = new BigInteger(1, attribute);
             commands.add(
                     new ProtocolCommand(
                             "setattr"+i,
@@ -668,7 +676,7 @@ public class IdemixSmartcard {
 
 	public static ProtocolCommands requestIssueCommitmentCommands(
 			CardVersion cv, IdemixCredentialDescription cd,
-			Attributes attributes, BigInteger nonce1) {
+			Attributes attributes, BigInteger nonce1) throws CredentialsException {
 		ProtocolCommands commands = new ProtocolCommands();
 		commands.addAll(
 			IdemixSmartcard.setIssuanceSpecificationCommands(cv, cd));
