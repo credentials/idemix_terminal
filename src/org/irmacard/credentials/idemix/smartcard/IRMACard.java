@@ -41,11 +41,6 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import net.sf.scuba.smartcards.CommandAPDU;
-import net.sf.scuba.smartcards.ISO7816;
-import net.sf.scuba.smartcards.ResponseAPDU;
-import net.sf.scuba.util.Hex;
-
 import org.irmacard.credentials.CredentialsException;
 import org.irmacard.credentials.idemix.CredentialBuilder;
 import org.irmacard.credentials.idemix.IdemixCredential;
@@ -63,8 +58,12 @@ import org.irmacard.idemix.util.IdemixFlags;
 import org.irmacard.idemix.util.IdemixLogEntry;
 import org.irmacard.idemix.util.IssuanceSetupData;
 import org.irmacard.idemix.util.VerificationSetupData;
-
 import org.slf4j.LoggerFactory;
+
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.util.Hex;
 
 public class IRMACard {
 	protected final static byte CLA_SECURE_MESSAGING = (byte) 0x0C;
@@ -702,7 +701,7 @@ public class IRMACard {
 
 		List<Integer> disclosed_attributes = new ArrayList<Integer>();
 		int mask = verificationSetup.getDisclosureMask();
-		for(int i = 0; i <= credential.getCredential().getNrAttributes(); i++) {
+		for(int i = 0; i < credential.getCredential().getNrAttributes(); i++) {
 			if((mask & 0x01) == 0x01) {
 				disclosed_attributes.add(i);
 			}
@@ -760,7 +759,7 @@ public class IRMACard {
 			return sw(ISO7816.SW_WRONG_LENGTH);
 		}
 
-		if(apdu.getP1() > credential.getCredential().getNrAttributes()) {
+		if(apdu.getP1() >= credential.getCredential().getNrAttributes()) {
 			return sw(ISO7816.SW_WRONG_P1P2);
 		}
 
@@ -788,7 +787,7 @@ public class IRMACard {
 			return false;
 		}
 
-		if((mask & (0xffff << (credential.getCredential().getNrAttributes() + 1))) != 0) {
+		if((mask & (0xffff << credential.getCredential().getNrAttributes())) != 0) {
 			Log.warning("Disclosing non-existing attribute");
 			return false;
 		}
@@ -863,7 +862,7 @@ public class IRMACard {
 		}
 
 		IdemixCredential cred = credentials.get(adminSelect.getID()).getCredential();
-		if(apdu.getP1() > cred.getNrAttributes()) {
+		if(apdu.getP1() >= cred.getNrAttributes()) {
 			return sw(ISO7816.SW_RECORD_NOT_FOUND);
 		}
 
