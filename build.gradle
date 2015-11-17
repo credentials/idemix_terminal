@@ -52,6 +52,7 @@ if ( project.hasProperty("mavenRepositoryIRMA") ) {
  */
 test {
     include "**/TestIRMACredential*"
+    include "**/TestCard*"
 }
 test.onlyIf { project.gradle.startParameter.taskNames.contains("test") }
 test.dependsOn cleanTest // Make sure it is always run
