@@ -62,7 +62,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import net.sf.scuba.smartcards.CardService;
 import net.sf.scuba.smartcards.CardServiceException;
 import net.sf.scuba.smartcards.ProtocolCommands;
 import net.sf.scuba.smartcards.ProtocolResponse;
@@ -327,9 +326,7 @@ public class TestIRMACredential {
 	@Category(RemovalTest.class)
 	public void removeMijnOverheidRoot() throws CardException,
 			CredentialsException, CardServiceException, InfoException {
-		CredentialDescription cd = DescriptionStore.getInstance()
-				.getCredentialDescriptionByName("MijnOverheid", "root");
-		remove(cd);
+		remove("MijnOverheid", "root");
 	}
 
 	@Test
@@ -356,9 +353,7 @@ public class TestIRMACredential {
 	@Category(RemovalTest.class)
 	public void removeFullNameCredential() throws CardException,
 			CredentialsException, CardServiceException, InfoException {
-		CredentialDescription cd = DescriptionStore.getInstance()
-				.getCredentialDescriptionByName("MijnOverheid", "fullName");
-		remove(cd);
+		remove("MijnOverheid", "fullName");
 	}
 
 	@Test
@@ -385,9 +380,7 @@ public class TestIRMACredential {
 	@Category(RemovalTest.class)
 	public void removeBirthCertificate() throws CardException,
 			CredentialsException, CardServiceException, InfoException {
-		CredentialDescription cd = DescriptionStore.getInstance()
-				.getCredentialDescriptionByName("MijnOverheid", "birthCertificate");
-		remove(cd);
+		remove("MijnOverheid", "birthCertificate");
 	}
 
 	@Test
@@ -414,9 +407,7 @@ public class TestIRMACredential {
 	@Category(RemovalTest.class)
 	public void removeSeniorAgeCredential() throws CardException,
 			CredentialsException, CardServiceException, InfoException {
-		CredentialDescription cd = DescriptionStore.getInstance()
-				.getCredentialDescriptionByName("MijnOverheid", "ageHigher");
-		remove(cd);
+		remove("MijnOverheid", "ageHigher");
 	}
 
 	@Test
@@ -442,9 +433,7 @@ public class TestIRMACredential {
     @Category(RemovalTest.class)
     public void removeIDDocument() throws InfoException, CardException,
             CredentialsException, CardServiceException {
-        CredentialDescription cd = DescriptionStore.getInstance()
-                .getCredentialDescriptionByName("MijnOverheid", "idDocument");
-        remove(cd);
+        remove("MijnOverheid", "idDocument");
     }
 
 	@Test
@@ -477,9 +466,7 @@ public class TestIRMACredential {
 	@Category(RemovalTest.class)
 	public void removeIRMATubeMemberCredential() throws CardException,
 			CredentialsException, CardServiceException, InfoException {
-		CredentialDescription cd = DescriptionStore.getInstance()
-				.getCredentialDescriptionByName("IRMATube", "member");
-		remove(cd);
+		remove("IRMATube", "member");
 	}
 
 	@Test
@@ -506,9 +493,7 @@ public class TestIRMACredential {
 	@Category(RemovalTest.class)
 	public void removeIRMAWikiMemberCredential() throws CardException,
 			CredentialsException, CardServiceException, InfoException {
-		CredentialDescription cd = DescriptionStore.getInstance()
-				.getCredentialDescriptionByName("IRMAWiki", "member");
-		remove(cd);
+		remove("IRMAWiki", "member");
 	}
 
 	@Test
@@ -537,48 +522,18 @@ public class TestIRMACredential {
 
 	private void verify(String verifier, String verification_spec)
 			throws CardException, CredentialsException, InfoException {
-		verify(new IdemixVerificationDescription(verifier, verification_spec));
-	}
+	    Attributes attr = TestCardHelpers.verify(verifier, verification_spec, TestSetup.getCardService());
 
-	private void verify(IdemixVerificationDescription vd) throws CardException,
-			CredentialsException {
-		CardService cs = TestSetup.getCardService();
-		IdemixCredentials ic = new IdemixCredentials(cs);
-
-		Attributes attr = ic.verify(vd);
-
-		if (attr == null) {
-			fail("The proof does not verify");
-		} else {
-			System.out.println("Proof verified");
-		}
-
-		attr.print();
-		cs.close();
+	    if (attr == null) {
+            fail("The proof does not verify");
+        } else {
+            System.out.println("Proof verified");
+        }
 	}
 
 	private void remove(String issuer, String credential) throws InfoException,
 			CardException, CredentialsException, CardServiceException {
-		CredentialDescription cd = DescriptionStore.getInstance()
-				.getCredentialDescriptionByName(issuer, credential);
-
-		remove(cd);
-	}
-
-	private void remove(CredentialDescription cd) throws CardException, CredentialsException, CardServiceException, InfoException {
-		IdemixService is = TestSetup.getIdemixService();
-		IdemixCredentials ic = new IdemixCredentials(is);
-
-		ic.connect();
-		is.sendCardPin(TestSetup.DEFAULT_CARD_PIN);
-		try {
-			ic.removeCredential(cd);
-		} catch (CardServiceException e) {
-			if (!e.getMessage().toUpperCase().contains("6A88")) {
-				throw e;
-			}
-		}
-		is.close();
+		TestCardHelpers.remove(issuer, credential, TestSetup.getCardService());
 	}
 
     private Attributes getStudentCardAttributes() {
