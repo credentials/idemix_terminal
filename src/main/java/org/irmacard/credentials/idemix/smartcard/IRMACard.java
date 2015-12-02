@@ -463,8 +463,8 @@ public class IRMACard {
 		commitment_message = cred_builder
 				.commitToSecretAndProve(master_secret, nonce1);
 		return data_sw(IdemixSmartcard.fixLength(
-				commitment_message.getCommitment(), params.l_n),
-				ISO7816.SW_NO_ERROR);
+						commitment_message.getCommitmentProof().getU(), params.l_n),
+						ISO7816.SW_NO_ERROR);
 	}
 
 	private ResponseAPDU processIssueCommitmentProof(CommandAPDU apdu) {

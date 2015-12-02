@@ -340,7 +340,7 @@ public class IdemixSmartcard {
      * Fix the length of array representation of BigIntegers put into the APDUs.
      *
      * @param integer of which the length needs to be fixed.
-     * @param the new length of the integer in bits
+     * @param length_in_bits the new length of the integer in bits
      * @return an array with a fixed length.
      */
     public static byte[] fixLength(BigInteger integer, int length_in_bits) {
@@ -395,10 +395,6 @@ public class IdemixSmartcard {
      *   <li> issuer public key, and
      *   <li> context.
      * </ul>
-     *
-     * @param spec the specification to be set
-     * @param id
-     * @return
      */
 	public static ProtocolCommands setIssuanceSpecificationCommands(
 			CardVersion cv, IdemixCredentialDescription cd) {
@@ -411,9 +407,6 @@ public class IdemixSmartcard {
     /**
      * Get the APDU commands for setting the public key on
      * the card.
-     *
-     * @param spec Issuance spec to get the public key from.
-     * @return
      */
 	public static ProtocolCommands setPublicKeyCommands(CardVersion cv,
 			IdemixCredentialDescription cd) {
@@ -462,10 +455,6 @@ public class IdemixSmartcard {
 
     /**
      * Get the APDU commands to start issuance.
-     *
-     * @param spec Issuance specification
-     * @param id id of credential
-     * @return
      */
     public static ProtocolCommand startIssuanceCommand(CardVersion cv, IdemixCredentialDescription cd) {
     	// FIXME: flags set to 0 for now
@@ -487,10 +476,6 @@ public class IdemixSmartcard {
 
     /**
      * Get the APDU commands to start proof.
-     *
-     * @param spec Proof specification
-     * @param id id of credential
-     * @return
      */
 	public static ProtocolCommand startProofCommand(CardVersion cv,
 			IdemixVerificationDescription vd) {
@@ -604,9 +589,6 @@ public class IdemixSmartcard {
      *   m_1, ..., m_l
      * </pre>
      *
-     * @param spec the issuance specification for the ordering of the values.
-     * @param values the attributes to be set.
-     * @return
      * @throws CredentialsException if attributes are missing
      */
     public static ProtocolCommands setAttributesCommands(CardVersion cv,
@@ -700,8 +682,8 @@ public class IdemixSmartcard {
 		BigInteger nonce_2 =
 				new BigInteger(1, responses.get("nonce_n2").getData());
 
-		ProofU proofU = new ProofU(c, v_prime_response, s_response);
-		return new IssueCommitmentMessage(U, proofU, nonce_2);
+		ProofU proofU = new ProofU(U, c, v_prime_response, s_response);
+		return new IssueCommitmentMessage(proofU, nonce_2);
 	}
 
 
