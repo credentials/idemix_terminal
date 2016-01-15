@@ -140,6 +140,22 @@ public class IRMACard {
 		state = State.IDLE;
 	}
 
+	public BigInteger getMasterSecret() {
+		return master_secret;
+	}
+
+	public void setMasterSecret(BigInteger master_secret) {
+		this.master_secret = master_secret;
+	}
+
+	public HashMap<Short, IRMAIdemixCredential> getCredentials() {
+		return credentials;
+	}
+
+	public void setCredentials(HashMap<Short, IRMAIdemixCredential> credentials) {
+		this.credentials = credentials;
+	}
+
 	public void addVerificationListener(VerificationStartListener listener) {
 		verificationListeners.add(listener);
 	}
