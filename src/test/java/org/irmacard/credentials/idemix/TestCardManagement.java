@@ -41,8 +41,10 @@ import net.sf.scuba.smartcards.CardServiceException;
 import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.CredentialsException;
 import org.irmacard.credentials.idemix.info.IdemixKeyStore;
+import org.irmacard.credentials.idemix.info.IdemixKeyStoreDeserializer;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
+import org.irmacard.credentials.info.DescriptionStoreDeserializer;
 import org.irmacard.credentials.info.InfoException;
 import org.irmacard.credentials.util.log.LogEntry;
 import org.irmacard.idemix.IdemixService;
@@ -51,11 +53,11 @@ import org.junit.Test;
 
 public class TestCardManagement {
 	@BeforeClass
-	public static void initializeInformation() {
+	public static void initializeInformation() throws InfoException {
 		URI core = new File(System.getProperty("user.dir")).toURI().resolve(
 				"irma_configuration/");
-		DescriptionStore.setCoreLocation(core);
-		IdemixKeyStore.setCoreLocation(core);
+		DescriptionStore.initialize(new DescriptionStoreDeserializer(core));
+		IdemixKeyStore.initialize(new IdemixKeyStoreDeserializer(core));
 	}
 
 	@Test

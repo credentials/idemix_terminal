@@ -47,6 +47,7 @@ import org.irmacard.credentials.idemix.categories.VerificationTest;
 import org.irmacard.credentials.idemix.descriptions.IdemixCredentialDescription;
 import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.credentials.idemix.info.IdemixKeyStore;
+import org.irmacard.credentials.idemix.info.IdemixKeyStoreDeserializer;
 import org.irmacard.credentials.idemix.irma.IRMAIdemixDisclosureProof;
 import org.irmacard.credentials.idemix.irma.IRMAIdemixIssuer;
 import org.irmacard.credentials.idemix.messages.IssueCommitmentMessage;
@@ -54,6 +55,7 @@ import org.irmacard.credentials.idemix.messages.IssueSignatureMessage;
 import org.irmacard.credentials.idemix.suites.IssuanceTests;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
+import org.irmacard.credentials.info.DescriptionStoreDeserializer;
 import org.irmacard.credentials.info.InfoException;
 import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.IdemixSmartcard;
@@ -73,10 +75,8 @@ public class TestIRMACredential {
 		URI core = new File(System
 				.getProperty("user.dir")).toURI()
 				.resolve("irma_configuration/");
-		DescriptionStore.setCoreLocation(core);
-		DescriptionStore.getInstance();
-		IdemixKeyStore.setCoreLocation(core);
-		IdemixKeyStore.getInstance();
+		DescriptionStore.initialize(new DescriptionStoreDeserializer(core));
+		IdemixKeyStore.initialize(new IdemixKeyStoreDeserializer(core));
 	}
 
 	@Test

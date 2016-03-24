@@ -14,9 +14,11 @@ import org.irmacard.credentials.Attributes;
 import org.irmacard.credentials.CredentialsException;
 import org.irmacard.credentials.idemix.descriptions.IdemixVerificationDescription;
 import org.irmacard.credentials.idemix.info.IdemixKeyStore;
+import org.irmacard.credentials.idemix.info.IdemixKeyStoreDeserializer;
 import org.irmacard.credentials.idemix.smartcard.IRMACard;
 import org.irmacard.credentials.idemix.smartcard.SmartCardEmulatorService;
 import org.irmacard.credentials.info.DescriptionStore;
+import org.irmacard.credentials.info.DescriptionStoreDeserializer;
 import org.irmacard.credentials.info.InfoException;
 import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.IdemixSmartcard;
@@ -44,10 +46,8 @@ public class TestCard {
         URI core = new File(System
                 .getProperty("user.dir")).toURI()
                 .resolve("irma_configuration/");
-        DescriptionStore.setCoreLocation(core);
-        DescriptionStore.getInstance();
-        IdemixKeyStore.setCoreLocation(core);
-        IdemixKeyStore.getInstance();
+        DescriptionStore.initialize(new DescriptionStoreDeserializer(core));
+        IdemixKeyStore.initialize(new IdemixKeyStoreDeserializer(core));
     }
 
     private CardService getCardService() {
