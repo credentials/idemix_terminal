@@ -53,10 +53,7 @@ import org.irmacard.credentials.idemix.irma.IRMAIdemixIssuer;
 import org.irmacard.credentials.idemix.messages.IssueCommitmentMessage;
 import org.irmacard.credentials.idemix.messages.IssueSignatureMessage;
 import org.irmacard.credentials.idemix.suites.IssuanceTests;
-import org.irmacard.credentials.info.CredentialDescription;
-import org.irmacard.credentials.info.DescriptionStore;
-import org.irmacard.credentials.info.DescriptionStoreDeserializer;
-import org.irmacard.credentials.info.InfoException;
+import org.irmacard.credentials.info.*;
 import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.IdemixSmartcard;
 import org.irmacard.idemix.util.CardVersion;
@@ -70,6 +67,8 @@ import net.sf.scuba.smartcards.ProtocolResponse;
 import net.sf.scuba.smartcards.ProtocolResponses;
 
 public class TestIRMACredential {
+	public static final String schemeManager = "irma-demo";
+
 	@BeforeClass
 	public static void initializeInformation() throws InfoException {
 		URI core = new File(System
@@ -102,7 +101,8 @@ public class TestIRMACredential {
     @Category(IssuanceTests.class)
     public void issueRootCredentialAsync()
             throws CredentialsException, CardException, CardServiceException, InfoException {
-        CredentialDescription cd = DescriptionStore.getInstance().getCredentialDescriptionByName("Surfnet", "root");
+        IssuerIdentifier verifierId = new IssuerIdentifier(TestIRMACredential.schemeManager, "Surfnet");
+        CredentialDescription cd = DescriptionStore.getInstance().getCredentialDescriptionByName(verifierId, "root");
 
         // Open channel to card
         IdemixService service = new IdemixService(TestSetup.getCardService());
@@ -165,8 +165,9 @@ public class TestIRMACredential {
 	@Test
 	@Category(VerificationTest.class)
 	public void verifyRootCredentialAsync() throws CredentialsException, CardException, CardServiceException, InfoException {
+		IssuerIdentifier verifierId = new IssuerIdentifier(TestIRMACredential.schemeManager, "Surfnet");
 		IdemixVerificationDescription vd =
-				new IdemixVerificationDescription("Surfnet", "rootNone");
+				new IdemixVerificationDescription(verifierId, "rootNone");
 
 		// Open channel to card
 		IdemixService service = new IdemixService(TestSetup.getCardService());
@@ -506,7 +507,8 @@ public class TestIRMACredential {
 	private void issue(String issuer, String credential, Attributes attributes)
 			throws InfoException, CardException, CredentialsException,
 			CardServiceException {
-		CredentialDescription cd = DescriptionStore.getInstance().getCredentialDescriptionByName(issuer, credential);
+		CredentialDescription cd = DescriptionStore.getInstance()
+				.getCredentialDescriptionByName(new IssuerIdentifier("irma-demo", issuer), credential);
 		issue(cd, attributes);
 	}
 

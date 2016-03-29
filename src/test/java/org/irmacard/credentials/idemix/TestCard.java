@@ -20,6 +20,7 @@ import org.irmacard.credentials.idemix.smartcard.SmartCardEmulatorService;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.DescriptionStoreDeserializer;
 import org.irmacard.credentials.info.InfoException;
+import org.irmacard.credentials.info.IssuerIdentifier;
 import org.irmacard.idemix.IdemixService;
 import org.irmacard.idemix.IdemixSmartcard;
 import org.irmacard.idemix.util.CardVersion;
@@ -89,8 +90,9 @@ public class TestCard {
 
         // No we will asynchronously verify this credential (so that we can
         // inject some commands
+        IssuerIdentifier verifierId = new IssuerIdentifier(TestIRMACredential.schemeManager, "Surfnet");
         IdemixVerificationDescription vd =
-                new IdemixVerificationDescription("Surfnet", "rootNone");
+                new IdemixVerificationDescription(verifierId, "rootNone");
 
         // Select applet and process version
         ProtocolResponse select_response = service.execute(

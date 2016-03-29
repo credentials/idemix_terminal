@@ -39,6 +39,7 @@ import org.irmacard.credentials.idemix.info.IdemixKeyStore;
 import org.irmacard.credentials.info.CredentialDescription;
 import org.irmacard.credentials.info.DescriptionStore;
 import org.irmacard.credentials.info.InfoException;
+import org.irmacard.credentials.info.IssuerIdentifier;
 import org.irmacard.idemix.IdemixService;
 
 import net.sf.scuba.smartcards.CardService;
@@ -50,7 +51,7 @@ public class TestCardHelpers {
             CardService cs) throws InfoException, CardException, CredentialsException,
                     CardServiceException {
         CredentialDescription cd = DescriptionStore.getInstance()
-                .getCredentialDescriptionByName(issuer, credential);
+                .getCredentialDescriptionByName(TestIRMACredential.schemeManager, issuer, credential);
         issue(cd, attributes, cs);
     }
 
@@ -67,7 +68,8 @@ public class TestCardHelpers {
 
     public static Attributes verify(String verifier, String verification_spec,
             CardService cs) throws CardException, CredentialsException, InfoException {
-        return verify(new IdemixVerificationDescription(verifier, verification_spec), cs);
+        IssuerIdentifier verifierId = new IssuerIdentifier(TestIRMACredential.schemeManager, verifier);
+        return verify(new IdemixVerificationDescription(verifierId, verification_spec), cs);
     }
 
     private static Attributes verify(IdemixVerificationDescription vd, CardService cs)
@@ -83,7 +85,7 @@ public class TestCardHelpers {
             throws InfoException, CardException, CredentialsException,
             CardServiceException {
         CredentialDescription cd = DescriptionStore.getInstance()
-                .getCredentialDescriptionByName(issuer, credential);
+                .getCredentialDescriptionByName(TestIRMACredential.schemeManager, issuer, credential);
 
         remove(cd, cs);
     }
